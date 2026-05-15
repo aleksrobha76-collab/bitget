@@ -84,6 +84,8 @@ BOT_TOKEN=123456:your_token_here
 WEBAPP_URL=https://your-tunnel-url.ngrok-free.app
 WEB_HOST=127.0.0.1
 WEB_PORT=8000
+ENABLE_BOT=true
+ENABLE_WEB=true
 DATA_DIR=./data
 DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
 ```
@@ -119,6 +121,8 @@ BOT_TOKEN=123456:your_token_here
 WEBAPP_URL=https://your-tunnel-url.ngrok-free.app
 WEB_HOST=127.0.0.1
 WEB_PORT=8000
+ENABLE_BOT=true
+ENABLE_WEB=true
 DATA_DIR=./data
 DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
 ```
@@ -130,6 +134,27 @@ python -m app.main
 ```
 
 ---
+
+
+## Render deployment
+
+Use only one polling bot instance per Telegram token. For a single Render Web Service, set the start command to:
+
+```bash
+python -m app.main
+```
+
+Environment variables:
+
+```env
+WEB_HOST=0.0.0.0
+WEB_PORT=8000
+ENABLE_BOT=true
+ENABLE_WEB=true
+WEBAPP_URL=https://your-render-service.onrender.com
+```
+
+If you split web and bot into two Render services, set `ENABLE_BOT=false` on the web service and `ENABLE_WEB=false` on the background worker. Do not run two services with `ENABLE_BOT=true` for the same `BOT_TOKEN`, otherwise Telegram returns `Conflict: terminated by other getUpdates request`.
 
 ## Exposing Localhost for the Mini App (required)
 

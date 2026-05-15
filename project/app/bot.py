@@ -12,6 +12,7 @@ from telegram import (
     Update,
     WebAppInfo,
 )
+from telegram.error import Conflict
 from telegram.ext import (
     Application,
     ApplicationBuilder,
@@ -33,8 +34,23 @@ WORKER_CODE_PATTERN = re.compile(r"^\d{4}$")
 AWAITING_WORKER_CODE_KEY = "awaiting_worker_code"
 
 
+async def _post_init(application: Application) -> None:
+    await application.bot.delete_webhook(drop_pending_updates=True)
+
+
+async def log_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    error = context.error
+    if isinstance(error, Conflict):
+        LOGGER.error(
+            "Telegram polling conflict: another process is already using this bot token. "
+            "Stop local copies or disable duplicate Render services."
+        )
+        return
+    LOGGER.exception("Unhandled bot error", exc_info=error)
+
+
 def build_application(settings: Settings, storage: UserStorage) -> Application:
-    application = ApplicationBuilder().token(settings.bot_token).build()
+    application = ApplicationBuilder().token(settings.bot_token).post_init(_post_init).build()
     application.bot_data["settings"] = settings
     application.bot_data["storage"] = storage
 
@@ -47,6 +63,7 @@ def build_application(settings: Settings, storage: UserStorage) -> Application:
     application.add_handler(
         MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_web_app_data)
     )
+    application.add_error_handler(log_error)
 
     return application
 

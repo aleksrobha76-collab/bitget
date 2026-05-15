@@ -42,6 +42,18 @@ const S = {
   },
 };
 
+async function requestJson(path, options = {}) {
+  const response = await fetch(path, options);
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    let message = `${response.status} ${response.statusText}`;
+    if (typeof data?.detail === 'string') message = data.detail;
+    if (Array.isArray(data?.detail)) message = data.detail.map(item => item.msg || item.message || JSON.stringify(item)).join('; ');
+    throw new Error(message);
+  }
+  return data;
+}
+
 async function api(method, path, body) {
   const options = {
     method,
@@ -50,16 +62,7 @@ async function api(method, path, body) {
   if (S.initData) options.headers['X-Telegram-Init-Data'] = S.initData;
   if (body) options.body = JSON.stringify(body);
 
-  const response = await fetch(path, options);
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({ detail: response.statusText }));
-    let message = `${response.status} ${response.statusText}`;
-    if (typeof data?.detail === 'string') message = data.detail;
-    if (Array.isArray(data?.detail)) message = data.detail.map(item => item.msg || item.message || JSON.stringify(item)).join('; ');
-    throw new Error(message);
-  }
-
-  const data = await response.json();
+  const data = await requestJson(path, options);
   if (typeof data?.server_time === 'number') syncServerClock(data.server_time);
   return data;
 }
@@ -251,8 +254,8 @@ async function loadChart() {
   try {
     const symbol = S.market.selectedSymbol;
     const [candles, ticker] = await Promise.all([
-      fetch(`/api/klines/${symbol}?interval=${S.chart.interval}&limit=80`).then(response => response.json()),
-      fetch(`/api/ticker24h/${symbol}`).then(response => response.json()),
+      requestJson(`/api/klines/${symbol}?interval=${S.chart.interval}&limit=80`),
+      requestJson(`/api/ticker24h/${symbol}`),
     ]);
     S.chart.candles = Array.isArray(candles) ? candles : [];
     S.chart.price = parseFloat(ticker.price) || 0;
@@ -263,6 +266,7 @@ async function loadChart() {
     drawChart();
   } catch (error) {
     console.warn('chart', error);
+    if (!S.chart.candles.length) drawChartPlaceholder('График временно недоступен');
   } finally {
     loader?.classList.add('hidden');
   }
@@ -307,7 +311,11 @@ function updateTrendStrip() {
 function drawChart() {
   const canvas = el('chart-canvas');
   const wrap = el('chart-area');
-  if (!canvas || !wrap || !S.chart.candles.length) return;
+  if (!canvas || !wrap) return;
+  if (!S.chart.candles.length) {
+    drawChartPlaceholder('Ожидаем котировки');
+    return;
+  }
 
   const dpr = window.devicePixelRatio || 1;
   const width = wrap.clientWidth;
@@ -400,6 +408,40 @@ function drawChart() {
   }
 }
 
+
+function drawChartPlaceholder(message) {
+  const canvas = el('chart-canvas');
+  const wrap = el('chart-area');
+  if (!canvas || !wrap) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const width = Math.max(wrap.clientWidth, 1);
+  const height = Math.max(wrap.clientHeight, 1);
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  canvas.style.width = width + 'px';
+  canvas.style.height = height + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+  ctx.fillStyle = '#111214';
+  ctx.fillRect(0, 0, width, height);
+  ctx.strokeStyle = '#1c2030';
+  ctx.lineWidth = 0.8;
+  for (let index = 0; index < 5; index += 1) {
+    const y = 16 + (height - 32) * (index / 4);
+    ctx.beginPath();
+    ctx.moveTo(18, y);
+    ctx.lineTo(width - 18, y);
+    ctx.stroke();
+  }
+  ctx.fillStyle = '#8FA2C1';
+  ctx.font = '600 12px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(message, width / 2, height / 2);
+}
+
 document.querySelectorAll('.tf').forEach(button => {
   button.addEventListener('click', () => {
     document.querySelectorAll('.tf').forEach(item => item.classList.remove('active'));
@@ -416,7 +458,7 @@ function startPricePoll() {
 
   window.__pricePollTimer = setInterval(async () => {
     try {
-      const ticker = await fetch(`/api/ticker24h/${S.market.selectedSymbol}`).then(response => response.json());
+      const ticker = await requestJson(`/api/ticker24h/${S.market.selectedSymbol}`);
       S.chart.price = parseFloat(ticker.price) || S.chart.price;
       S.chart.change = parseFloat(ticker.change) || 0;
       S.chart.high = parseFloat(ticker.high) || 0;
@@ -424,7 +466,9 @@ function startPricePoll() {
       updatePriceUI();
       if (S.page === 'home') drawChart();
       updateActiveBetPL();
-    } catch (_) {}
+    } catch (error) {
+      console.warn('ticker poll', error);
+    }
   }, 3000);
 
   window.__chartReloadTimer = setInterval(() => {

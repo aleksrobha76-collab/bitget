@@ -5,7 +5,6 @@ import logging
 import time
 from contextlib import asynccontextmanager
 
-import httpx
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -20,11 +19,14 @@ from .auth import (
     validate_init_data,
 )
 from .config import Settings, get_settings
+from .market_data import (
+    get_current_price,
+    get_klines as fetch_klines,
+    get_ticker24h as fetch_ticker24h,
+)
 from .storage import UserStorage, normalize_username
 
 logger = logging.getLogger(__name__)
-
-BINANCE = "https://api.binance.com/api/v3"
 
 
 class BetRequest(BaseModel):
@@ -56,12 +58,12 @@ async def _bet_resolver(storage: UserStorage) -> None:
     while True:
         try:
             expired = storage.get_pending_expired_bets()
-            if expired:
-                async with httpx.AsyncClient(timeout=5) as client:
-                    response = await client.get(f"{BINANCE}/ticker/price?symbol=BTCUSDT")
-                price = float(response.json()["price"]) if response.status_code == 200 else None
-                for bet in expired:
-                    storage.resolve_bet(bet["id"], price or bet["entry_price"])
+            for bet in expired:
+                try:
+                    price = await get_current_price(bet.get("symbol") or "BTCUSDT")
+                except Exception:
+                    price = float(bet["entry_price"])
+                storage.resolve_bet(bet["id"], price)
         except Exception as exc:  # pragma: no cover - background safety
             logger.warning("bet resolver: %s", exc)
         await asyncio.sleep(10)
@@ -129,49 +131,25 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
 
     @app.get("/api/price/{symbol}")
     async def get_price(symbol: str) -> dict:
-        async with httpx.AsyncClient(timeout=5) as client:
-            response = await client.get(f"{BINANCE}/ticker/price?symbol={symbol.upper()}")
-        if response.status_code != 200:
-            raise HTTPException(502, "Price fetch failed")
-        return response.json()
+        try:
+            price = await get_current_price(symbol)
+        except Exception as exc:
+            raise HTTPException(502, "Price fetch failed") from exc
+        return {"symbol": symbol.upper(), "price": str(price)}
 
     @app.get("/api/ticker24h/{symbol}")
     async def get_ticker24h(symbol: str) -> dict:
-        async with httpx.AsyncClient(timeout=5) as client:
-            response = await client.get(f"{BINANCE}/ticker/24hr?symbol={symbol.upper()}")
-        if response.status_code != 200:
-            raise HTTPException(502, "Ticker fetch failed")
-        data = response.json()
-        return {
-            "price": data["lastPrice"],
-            "change": data["priceChangePercent"],
-            "high": data["highPrice"],
-            "low": data["lowPrice"],
-            "volume": data["volume"],
-        }
+        try:
+            return await fetch_ticker24h(symbol)
+        except Exception as exc:
+            raise HTTPException(502, "Ticker fetch failed") from exc
 
     @app.get("/api/klines/{symbol}")
     async def get_klines(symbol: str, interval: str = "1m", limit: int = 80) -> list:
-        if limit > 200:
-            limit = 200
-        async with httpx.AsyncClient(timeout=10) as client:
-            response = await client.get(
-                f"{BINANCE}/klines",
-                params={"symbol": symbol.upper(), "interval": interval, "limit": limit},
-            )
-        if response.status_code != 200:
-            raise HTTPException(502, "Klines fetch failed")
-        return [
-            {
-                "t": candle[0],
-                "o": float(candle[1]),
-                "h": float(candle[2]),
-                "l": float(candle[3]),
-                "c": float(candle[4]),
-                "v": float(candle[5]),
-            }
-            for candle in response.json()
-        ]
+        try:
+            return await fetch_klines(symbol, interval=interval, limit=limit)
+        except Exception as exc:
+            raise HTTPException(502, "Klines fetch failed") from exc
 
     @app.get("/api/me")
     async def get_me(request: Request) -> dict:
@@ -232,13 +210,10 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
         if body.duration not in (60, 300, 900):
             raise HTTPException(400, "duration must be 60, 300, or 900")
 
-        async with httpx.AsyncClient(timeout=5) as client:
-            response = await client.get(
-                f"{BINANCE}/ticker/price?symbol={body.symbol.upper()}"
-            )
-        if response.status_code != 200:
-            raise HTTPException(502, "Cannot fetch current price")
-        entry_price = float(response.json()["price"])
+        try:
+            entry_price = await get_current_price(body.symbol)
+        except Exception as exc:
+            raise HTTPException(502, "Cannot fetch current price") from exc
 
         try:
             bet = storage.place_bet(

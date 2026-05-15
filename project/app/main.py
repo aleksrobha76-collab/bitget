@@ -36,17 +36,25 @@ def main() -> None:
 
     storage = UserStorage(settings.data_dir, database_url=settings.database_url)
 
-    web_thread = threading.Thread(
-        target=run_web_server,
-        args=(settings, storage),
-        name="mini-app-web",
-        daemon=True,
-    )
-    web_thread.start()
+    if not settings.enable_bot and not settings.enable_web:
+        raise RuntimeError("ENABLE_BOT and ENABLE_WEB cannot both be false.")
+
+    if settings.enable_web and not settings.enable_bot:
+        run_web_server(settings, storage)
+        return
+
+    if settings.enable_web:
+        web_thread = threading.Thread(
+            target=run_web_server,
+            args=(settings, storage),
+            name="mini-app-web",
+            daemon=True,
+        )
+        web_thread.start()
 
     application = build_application(settings, storage)
     asyncio.set_event_loop(asyncio.new_event_loop())
-    application.run_polling(drop_pending_updates=True)
+    application.run_polling(drop_pending_updates=True, close_loop=False)
 
 
 if __name__ == "__main__":

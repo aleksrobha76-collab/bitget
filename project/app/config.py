@@ -17,6 +17,8 @@ class Settings:
     webapp_url: str
     web_host: str
     web_port: int
+    enable_bot: bool
+    enable_web: bool
     data_dir: Path
     database_url: str
     admin_telegram_ids: frozenset[int]
@@ -37,6 +39,8 @@ def get_settings() -> Settings:
     webapp_url = os.getenv("WEBAPP_URL", "").strip() or "http://127.0.0.1:8000"
     web_host = os.getenv("WEB_HOST", "127.0.0.1").strip()
     web_port = int(os.getenv("WEB_PORT", "8000"))
+    enable_bot = _parse_bool(os.getenv("ENABLE_BOT"), default=True)
+    enable_web = _parse_bool(os.getenv("ENABLE_WEB"), default=True)
     data_dir = Path(os.getenv("DATA_DIR", "./data")).resolve()
     database_url = os.getenv("DATABASE_URL", "").strip()
     admin_telegram_ids = _parse_admin_ids(os.getenv("ADMIN_TELEGRAM_IDS", ""))
@@ -47,11 +51,19 @@ def get_settings() -> Settings:
         webapp_url=webapp_url,
         web_host=web_host,
         web_port=web_port,
+        enable_bot=enable_bot,
+        enable_web=enable_web,
         data_dir=data_dir,
         database_url=database_url,
         admin_telegram_ids=admin_telegram_ids,
         admin_usernames=admin_usernames,
     )
+
+
+def _parse_bool(raw_value: str | None, *, default: bool) -> bool:
+    if raw_value is None or not raw_value.strip():
+        return default
+    return raw_value.strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
 def _parse_admin_ids(raw_value: str) -> frozenset[int]:
