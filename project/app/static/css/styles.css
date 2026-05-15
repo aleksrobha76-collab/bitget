@@ -447,12 +447,18 @@ html, body { height: 100%; background: var(--bg); color: var(--text); overflow: 
 .summary-strip { background: #121720; border-radius: 16px; padding: 12px 14px; font-size: 12px; font-weight: 700; }
 .footer-row { display: flex; gap: 10px; flex-shrink: 0; }
 .footer-card { flex: 1; background: var(--card4); border-radius: 20px; padding: 12px 14px; }
+.footer-card.support-link { color: inherit; text-decoration: none; display: block; }
+.footer-card.support-link:active { transform: scale(0.98); }
 .footer-card.win-card { background: #112119; }
 .footer-card.red-card { background: #231117; }
 .fc-cap { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
 .fc-val { font-size: 16px; font-weight: 700; }
 .fc-val.green { color: var(--green); }
 .fc-val.red   { color: var(--red2); }
+.hc-bal-val.green { color: var(--green); }
+.hc-bal-val.red { color: var(--red2); }
+.sc-big-pl.green { color: var(--green); }
+.sc-big-pl.red { color: var(--red2); }
 
 /* ═══ PROFILE ═══ */
 .profile-card { background: var(--card-deep); border-radius: 28px; border: 1px solid var(--border); padding: 16px; flex-shrink: 0; }

@@ -487,8 +487,8 @@ function renderUserUI() {
   const username = S.user.username ? '@' + S.user.username : 'ID ' + (S.user.telegram_id || '');
   if (el('hc-name')) el('hc-name').textContent = username;
   if (el('stats-hc-name')) el('stats-hc-name').textContent = username;
-  if (el('pr-name')) el('pr-name').textContent = name;
-  if (el('pr-hero-name')) el('pr-hero-name').textContent = name;
+  if (el('pr-name')) el('pr-name').textContent = username;
+  if (el('pr-hero-name')) el('pr-hero-name').textContent = username;
   if (el('pr-hero-meta')) el('pr-hero-meta').textContent = 'UID ' + (S.user.telegram_id || '—');
   renderBalance();
 }
@@ -779,12 +779,17 @@ function renderStatsPage() {
     const invested = resolved.reduce((sum, bet) => sum + bet.amount, 0);
     const roi = invested ? ((netProfit / invested) * 100).toFixed(1) : '0';
     const winRate = resolved.length ? Math.round((wins.length / resolved.length) * 100) : 0;
+    const profitClass = netProfit >= 0 ? 'green' : 'red';
+    const profitText = `${netProfit >= 0 ? '+' : '-'}₽${Math.abs(netProfit).toFixed(2)}`;
 
     if (el('stats-big-pl')) {
-      el('stats-big-pl').textContent = `${netProfit >= 0 ? '+' : '-'}₽${Math.abs(netProfit).toFixed(2)}`;
-      el('stats-big-pl').style.color = netProfit >= 0 ? 'var(--green)' : 'var(--red2)';
+      el('stats-big-pl').textContent = profitText;
+      el('stats-big-pl').className = 'sc-big-pl ' + profitClass;
     }
-    if (el('stats-pl')) el('stats-pl').textContent = `${netProfit >= 0 ? '+' : '-'}₽${Math.abs(netProfit).toFixed(2)}`;
+    if (el('stats-pl')) {
+      el('stats-pl').textContent = profitText;
+      el('stats-pl').className = 'hc-bal-val ' + profitClass;
+    }
     if (el('m-roi')) el('m-roi').querySelector('.metric-val').textContent = roi + '%';
     if (el('m-winrate')) el('m-winrate').querySelector('.metric-val').textContent = winRate + '%';
     if (el('m-draws')) el('m-draws').querySelector('.metric-val').textContent = '₽' + losses.reduce((sum, bet) => sum + bet.amount, 0).toFixed(2);

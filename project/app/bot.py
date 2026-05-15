@@ -125,10 +125,7 @@ async def _send_open_app_message(message, settings: Settings, user_record: dict 
 
 async def _ask_for_worker_code(message) -> None:
     await message.reply_text(
-        (
-            "Введите 4-значный код воркера.\n"
-            "Если тестируете сами, используйте код 0000."
-        ),
+        "Введите 4-значный код",
         reply_markup=ReplyKeyboardRemove(),
     )
 
