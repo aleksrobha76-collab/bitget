@@ -36,7 +36,7 @@ class Settings:
 def get_settings() -> Settings:
     load_dotenv(BASE_DIR / ".env", override=True)
     bot_token = os.getenv("BOT_TOKEN", "").strip()
-    webapp_url = os.getenv("WEBAPP_URL", "").strip() or "http://127.0.0.1:8000"
+    webapp_url = _get_webapp_url()
     web_host = os.getenv("WEB_HOST", "127.0.0.1").strip()
     web_port = int(os.getenv("WEB_PORT", "8000"))
     enable_bot = _parse_bool(os.getenv("ENABLE_BOT"), default=True)
@@ -64,6 +64,22 @@ def _parse_bool(raw_value: str | None, *, default: bool) -> bool:
     if raw_value is None or not raw_value.strip():
         return default
     return raw_value.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _get_webapp_url() -> str:
+    explicit_url = os.getenv("WEBAPP_URL", "").strip()
+    if explicit_url:
+        return explicit_url.rstrip("/")
+
+    render_url = os.getenv("RENDER_EXTERNAL_URL", "").strip()
+    if render_url:
+        return render_url.rstrip("/")
+
+    render_hostname = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
+    if render_hostname:
+        return f"https://{render_hostname}".rstrip("/")
+
+    return "http://127.0.0.1:8000"
 
 
 def _parse_admin_ids(raw_value: str) -> frozenset[int]:

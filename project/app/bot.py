@@ -7,6 +7,7 @@ from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     KeyboardButton,
+    MenuButtonWebApp,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
     Update,
@@ -23,7 +24,7 @@ from telegram.ext import (
 )
 
 from .auth import is_owner_account
-from .config import Settings, get_settings
+from .config import Settings
 from .storage import TEST_WORKER_CODE, UserStorage
 
 
@@ -36,6 +37,14 @@ AWAITING_WORKER_CODE_KEY = "awaiting_worker_code"
 
 async def _post_init(application: Application) -> None:
     await application.bot.delete_webhook(drop_pending_updates=True)
+    settings: Settings | None = application.bot_data.get("settings")
+    if settings and settings.webapp_url.startswith("https://"):
+        await application.bot.set_chat_menu_button(
+            menu_button=MenuButtonWebApp(
+                text=OPEN_APP_TEXT,
+                web_app=WebAppInfo(url=settings.webapp_url),
+            )
+        )
 
 
 async def log_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -79,10 +88,9 @@ def contact_keyboard() -> ReplyKeyboardMarkup:
 
 
 def open_app_keyboard(settings: Settings) -> InlineKeyboardMarkup:
-    current_settings = get_settings()
     button = InlineKeyboardButton(
         text=OPEN_APP_TEXT,
-        web_app=WebAppInfo(url=current_settings.webapp_url),
+        web_app=WebAppInfo(url=settings.webapp_url),
     )
     return InlineKeyboardMarkup([[button]])
 

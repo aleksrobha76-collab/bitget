@@ -11,6 +11,11 @@ LOGGER = logging.getLogger(__name__)
 BINANCE = "https://api.binance.com/api/v3"
 COINBASE = "https://api.exchange.coinbase.com"
 CACHE_TTL_SECONDS = 120
+FALLBACK_PRICES = {
+    "BTCUSDT": 104000.0,
+    "ETHUSDT": 2600.0,
+    "SOLUSDT": 175.0,
+}
 
 _INTERVAL_SECONDS = {
     "1m": 60,
@@ -39,6 +44,10 @@ def _coinbase_product(symbol: str) -> str:
 
 def _cache_fresh(created_at: float) -> bool:
     return time.time() - created_at <= CACHE_TTL_SECONDS
+
+
+def _fallback_price(symbol: str) -> float:
+    return FALLBACK_PRICES.get(_normalize_symbol(symbol), FALLBACK_PRICES["BTCUSDT"])
 
 
 async def _get_json(client: httpx.AsyncClient, url: str, **kwargs: Any) -> Any:
@@ -104,6 +113,15 @@ def _synthetic_candles(price: float, limit: int) -> list[dict[str, float]]:
     return candles
 
 
+def _fallback_ticker(symbol: str) -> dict[str, str]:
+    price = _fallback_price(symbol)
+    candles = _synthetic_candles(price, 80)
+    ticker = _build_ticker_from_candles(_normalize_symbol(symbol), candles)
+    ticker["price"] = f"{price:.8f}"
+    ticker["source"] = "synthetic"
+    return ticker
+
+
 async def get_klines(symbol: str, interval: str = "1m", limit: int = 80) -> list[dict[str, float]]:
     symbol = _normalize_symbol(symbol)
     interval = interval if interval in _INTERVAL_SECONDS else "1m"
@@ -165,7 +183,7 @@ async def get_klines(symbol: str, interval: str = "1m", limit: int = 80) -> list
     if ticker:
         return _synthetic_candles(float(ticker[1]["price"]), limit)
 
-    raise RuntimeError("Klines fetch failed")
+    return _synthetic_candles(_fallback_price(symbol), limit)
 
 
 async def get_ticker24h(symbol: str) -> dict[str, str]:
@@ -193,7 +211,10 @@ async def get_ticker24h(symbol: str) -> dict[str, str]:
             product = _coinbase_product(symbol)
             spot = await _get_json(client, f"https://api.coinbase.com/v2/prices/{product}/spot")
             price = float(spot["data"]["amount"])
-            candles = await get_klines(symbol, "1m", 80)
+            try:
+                candles = await get_klines(symbol, "1m", 80)
+            except Exception:
+                candles = _synthetic_candles(price, 80)
             ticker = _build_ticker_from_candles(symbol, candles)
             ticker["price"] = f"{price:.8f}"
             ticker["source"] = "coinbase"
@@ -214,7 +235,9 @@ async def get_ticker24h(symbol: str) -> dict[str, str]:
         _price_cache[symbol] = (time.time(), ticker)
         return ticker
 
-    raise RuntimeError("Ticker fetch failed")
+    ticker = _fallback_ticker(symbol)
+    _price_cache[symbol] = (time.time(), ticker)
+    return ticker
 
 
 async def get_current_price(symbol: str) -> float:
