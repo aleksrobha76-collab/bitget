@@ -11,6 +11,7 @@ LOGGER = logging.getLogger(__name__)
 BINANCE = "https://api.binance.com/api/v3"
 COINBASE = "https://api.exchange.coinbase.com"
 CACHE_TTL_SECONDS = 120
+BINANCE_BLOCK_COOLDOWN_SECONDS = 3600
 FALLBACK_PRICES = {
     "BTCUSDT": 104000.0,
     "ETHUSDT": 2600.0,
@@ -28,6 +29,7 @@ _INTERVAL_SECONDS = {
 
 _price_cache: dict[str, tuple[float, dict[str, Any]]] = {}
 _klines_cache: dict[tuple[str, str, int], tuple[float, list[dict[str, float]]]] = {}
+_binance_blocked_until = 0.0
 
 
 def _normalize_symbol(symbol: str) -> str:
@@ -50,6 +52,21 @@ def _fallback_price(symbol: str) -> float:
     return FALLBACK_PRICES.get(_normalize_symbol(symbol), FALLBACK_PRICES["BTCUSDT"])
 
 
+def _binance_available() -> bool:
+    return time.time() >= _binance_blocked_until
+
+
+def _mark_binance_failure(exc: Exception) -> None:
+    global _binance_blocked_until
+    response = getattr(exc, "response", None)
+    if getattr(response, "status_code", None) == 418:
+        _binance_blocked_until = time.time() + BINANCE_BLOCK_COOLDOWN_SECONDS
+        LOGGER.warning(
+            "binance returned 418; skipping binance for %s seconds",
+            BINANCE_BLOCK_COOLDOWN_SECONDS,
+        )
+
+
 async def _get_json(client: httpx.AsyncClient, url: str, **kwargs: Any) -> Any:
     last_error: Exception | None = None
     for attempt in range(2):
@@ -59,6 +76,7 @@ async def _get_json(client: httpx.AsyncClient, url: str, **kwargs: Any) -> Any:
             return response.json()
         except Exception as exc:  # pragma: no cover - network dependent
             last_error = exc
+            _mark_binance_failure(exc)
             if attempt == 0:
                 await _sleep_before_retry()
     raise RuntimeError(str(last_error)) from last_error
@@ -130,27 +148,28 @@ async def get_klines(symbol: str, interval: str = "1m", limit: int = 80) -> list
     cached = _klines_cache.get(cache_key)
 
     async with httpx.AsyncClient(timeout=10) as client:
-        try:
-            data = await _get_json(
-                client,
-                f"{BINANCE}/klines",
-                params={"symbol": symbol, "interval": interval, "limit": limit},
-            )
-            candles = [
-                {
-                    "t": candle[0],
-                    "o": float(candle[1]),
-                    "h": float(candle[2]),
-                    "l": float(candle[3]),
-                    "c": float(candle[4]),
-                    "v": float(candle[5]),
-                }
-                for candle in data
-            ]
-            _klines_cache[cache_key] = (time.time(), candles)
-            return candles
-        except Exception as exc:
-            LOGGER.warning("binance klines failed for %s: %s", symbol, exc)
+        if _binance_available():
+            try:
+                data = await _get_json(
+                    client,
+                    f"{BINANCE}/klines",
+                    params={"symbol": symbol, "interval": interval, "limit": limit},
+                )
+                candles = [
+                    {
+                        "t": candle[0],
+                        "o": float(candle[1]),
+                        "h": float(candle[2]),
+                        "l": float(candle[3]),
+                        "c": float(candle[4]),
+                        "v": float(candle[5]),
+                    }
+                    for candle in data
+                ]
+                _klines_cache[cache_key] = (time.time(), candles)
+                return candles
+            except Exception as exc:
+                LOGGER.warning("binance klines failed for %s: %s", symbol, exc)
 
         try:
             product = _coinbase_product(symbol)
@@ -191,21 +210,22 @@ async def get_ticker24h(symbol: str) -> dict[str, str]:
     cached = _price_cache.get(symbol)
 
     async with httpx.AsyncClient(timeout=6) as client:
-        try:
-            data = await _get_json(client, f"{BINANCE}/ticker/24hr", params={"symbol": symbol})
-            ticker = {
-                "symbol": symbol,
-                "price": data["lastPrice"],
-                "change": data["priceChangePercent"],
-                "high": data["highPrice"],
-                "low": data["lowPrice"],
-                "volume": data["volume"],
-                "source": "binance",
-            }
-            _price_cache[symbol] = (time.time(), ticker)
-            return ticker
-        except Exception as exc:
-            LOGGER.warning("binance ticker failed for %s: %s", symbol, exc)
+        if _binance_available():
+            try:
+                data = await _get_json(client, f"{BINANCE}/ticker/24hr", params={"symbol": symbol})
+                ticker = {
+                    "symbol": symbol,
+                    "price": data["lastPrice"],
+                    "change": data["priceChangePercent"],
+                    "high": data["highPrice"],
+                    "low": data["lowPrice"],
+                    "volume": data["volume"],
+                    "source": "binance",
+                }
+                _price_cache[symbol] = (time.time(), ticker)
+                return ticker
+            except Exception as exc:
+                LOGGER.warning("binance ticker failed for %s: %s", symbol, exc)
 
         try:
             product = _coinbase_product(symbol)
