@@ -6,6 +6,7 @@ A Telegram bot that:
 2. Stores the contact locally in `data/users.json`
 3. Sends an inline button that opens a **Telegram Mini App**
 4. Serves a fintech-style trading dashboard UI
+5. Optionally runs a second bot for worker applications and admin approval
 
 **Test bot:** [@test124Bot_bot](https://t.me/test124Bot_bot)
 
@@ -81,10 +82,12 @@ Edit `.env` and fill in your values:
 
 ```env
 BOT_TOKEN=123456:your_token_here
+WORKER_BOT_TOKEN=123456:your_worker_bot_token_here
 WEBAPP_URL=https://your-tunnel-url.ngrok-free.app
 WEB_HOST=127.0.0.1
 WEB_PORT=8000
 ENABLE_BOT=true
+ENABLE_WORKER_BOT=true
 ENABLE_WEB=true
 DATA_DIR=./data
 DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
@@ -118,10 +121,12 @@ Edit `.env` and fill in your values:
 
 ```env
 BOT_TOKEN=123456:your_token_here
+WORKER_BOT_TOKEN=123456:your_worker_bot_token_here
 WEBAPP_URL=https://your-tunnel-url.ngrok-free.app
 WEB_HOST=127.0.0.1
 WEB_PORT=8000
 ENABLE_BOT=true
+ENABLE_WORKER_BOT=true
 ENABLE_WEB=true
 DATA_DIR=./data
 DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
@@ -150,11 +155,17 @@ Environment variables:
 WEB_HOST=0.0.0.0
 WEB_PORT=8000
 ENABLE_BOT=true
+ENABLE_WORKER_BOT=true
 ENABLE_WEB=true
 WEBAPP_URL=https://your-render-service.onrender.com
 ```
 
-If you split web and bot into two Render services, set `ENABLE_BOT=false` on the web service and `ENABLE_WEB=false` on the background worker. Do not run two services with `ENABLE_BOT=true` for the same `BOT_TOKEN`, otherwise Telegram returns `Conflict: terminated by other getUpdates request`.
+If you split web and bots into separate Render services, set `ENABLE_BOT=false` and `ENABLE_WORKER_BOT=false` on the web service. On the main bot worker use `ENABLE_WEB=false`, `ENABLE_BOT=true`, `ENABLE_WORKER_BOT=false`. On the worker-application bot use `ENABLE_WEB=false`, `ENABLE_BOT=false`, `ENABLE_WORKER_BOT=true`. Do not run two services with the same enabled token, otherwise Telegram returns `Conflict: terminated by other getUpdates request`.
+
+## Worker application bot
+
+Create a second Telegram bot in BotFather and put its token into `WORKER_BOT_TOKEN`.
+When a candidate sends `/start`, the bot shows placeholder rules and a resume example. The candidate sends one resume message, admins from `ADMIN_TELEGRAM_IDS` receive it with `Принять` and `Отклонить` buttons. If the admin accepts, the worker is created in the same storage as the main bot and receives a generated 4-digit code.
 
 ## Exposing Localhost for the Mini App (required)
 

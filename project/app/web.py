@@ -46,10 +46,6 @@ class BalanceRequest(BaseModel):
     amount: float
 
 
-class WorkerCreateRequest(BaseModel):
-    username: str
-
-
 def current_server_time() -> float:
     return time.time()
 
@@ -328,21 +324,6 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
         except AdminAccessError as exc:
             raise HTTPException(403, str(exc)) from exc
         return {"workers": storage.list_workers()}
-
-    @app.post("/api/admin/workers")
-    async def admin_create_worker(request: Request, body: WorkerCreateRequest) -> dict:
-        init_data = request.headers.get("X-Telegram-Init-Data", "")
-        try:
-            ensure_owner(init_data, settings)
-        except AdminAccessError as exc:
-            raise HTTPException(403, str(exc)) from exc
-
-        try:
-            worker = storage.create_worker(body.username)
-        except ValueError as exc:
-            raise HTTPException(400, str(exc)) from exc
-
-        return {"ok": True, "worker": worker}
 
     return app
 

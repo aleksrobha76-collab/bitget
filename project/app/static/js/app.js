@@ -861,12 +861,6 @@ document.querySelectorAll('.adm-tab').forEach(button => {
   button.addEventListener('click', () => activateAdminTab(button.dataset.atab));
 });
 
-el('worker-username-input')?.addEventListener('keydown', event => {
-  if (event.key !== 'Enter') return;
-  event.preventDefault();
-  createWorker();
-});
-
 async function loadAdminAccess() {
   try {
     const result = await api('GET', '/api/admin/access');
@@ -910,7 +904,6 @@ function renderAdminShell() {
   }
   el('admin-tab-users')?.classList.toggle('hidden', !isOwner);
   el('admin-tab-workers')?.classList.toggle('hidden', !isOwner);
-  el('worker-create-card')?.classList.toggle('hidden', !isOwner);
   if (el('admin-tab-bets')) el('admin-tab-bets').textContent = isOwner ? 'Ставки' : 'Мои ставки';
   const activeTab = getCurrentAdminTab();
   activateAdminTab(isOwner ? (activeTab === 'bets' || activeTab === 'workers' ? activeTab : 'users') : 'bets');
@@ -1117,24 +1110,6 @@ function renderAdminWorkers() {
       <div class="worker-client-list">${clientsHtml}</div>
     </div>`;
   }).join('');
-}
-
-async function createWorker() {
-  const input = el('worker-username-input');
-  const username = String(input?.value || '').trim();
-  if (!username) {
-    showMessage('Введите username воркера');
-    return;
-  }
-
-  try {
-    const result = await api('POST', '/api/admin/workers', { username });
-    if (input) input.value = '';
-    await loadAdminData();
-    showMessage(`Воркер @${result.worker.username} добавлен. Код: ${result.worker.code}`);
-  } catch (error) {
-    showMessage(error.message);
-  }
 }
 
 function el(id) { return document.getElementById(id); }

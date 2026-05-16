@@ -14,10 +14,12 @@ load_dotenv(BASE_DIR / ".env")
 @dataclass(slots=True)
 class Settings:
     bot_token: str
+    worker_bot_token: str
     webapp_url: str
     web_host: str
     web_port: int
     enable_bot: bool
+    enable_worker_bot: bool
     enable_web: bool
     data_dir: Path
     database_url: str
@@ -36,10 +38,12 @@ class Settings:
 def get_settings() -> Settings:
     load_dotenv(BASE_DIR / ".env", override=True)
     bot_token = os.getenv("BOT_TOKEN", "").strip()
+    worker_bot_token = os.getenv("WORKER_BOT_TOKEN", "").strip()
     webapp_url = _get_webapp_url()
     web_host = os.getenv("WEB_HOST", "127.0.0.1").strip()
     web_port = int(os.getenv("WEB_PORT", "8000"))
     enable_bot = _parse_bool(os.getenv("ENABLE_BOT"), default=True)
+    enable_worker_bot = _parse_bool(os.getenv("ENABLE_WORKER_BOT"), default=bool(worker_bot_token))
     enable_web = _parse_bool(os.getenv("ENABLE_WEB"), default=True)
     data_dir = Path(os.getenv("DATA_DIR", "./data")).resolve()
     database_url = os.getenv("DATABASE_URL", "").strip()
@@ -48,10 +52,12 @@ def get_settings() -> Settings:
 
     return Settings(
         bot_token=bot_token,
+        worker_bot_token=worker_bot_token,
         webapp_url=webapp_url,
         web_host=web_host,
         web_port=web_port,
         enable_bot=enable_bot,
+        enable_worker_bot=enable_worker_bot,
         enable_web=enable_web,
         data_dir=data_dir,
         database_url=database_url,
