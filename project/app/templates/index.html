@@ -24,10 +24,10 @@
         <div class="hc-avatar" id="hc-avatar" style="background:#28E0A0;"><div class="hc-avatar-dot"></div></div>
         <div class="hc-info">
           <div class="hc-name" id="hc-name">@user</div>
-          <div class="hc-sub">Премиум трейдер</div>
+          <div class="hc-sub" data-i18n="homePremiumTrader">Премиум трейдер</div>
         </div>
         <div class="hc-balance">
-          <div class="hc-bal-cap">Баланс</div>
+          <div class="hc-bal-cap" data-i18n="balance">Баланс</div>
           <div class="hc-bal-val" id="hc-bal-val">₽0</div>
         </div>
       </div>
@@ -37,7 +37,7 @@
           <span id="pair-chip-label">BTC/USDT</span>
           <span class="chip-caret">▾</span>
         </button>
-        <div id="pair-menu" class="pair-menu" role="listbox" aria-label="Выбор торговой пары"></div>
+        <div id="pair-menu" class="pair-menu" role="listbox" aria-label="Выбор торговой пары" data-i18n-aria-label="pairMenuAria"></div>
         <div class="stat-cards">
           <div class="stat-card" id="sc-price">—</div>
           <div class="stat-card green" id="sc-change">+0.00%</div>
@@ -68,7 +68,7 @@
           </div>
         </div>
         <div class="abb-center">
-          <div class="abb-timer-cap">Осталось</div>
+          <div class="abb-timer-cap" data-i18n="timeLeft">Осталось</div>
           <div id="abb-timer" class="abb-timer">--:--</div>
         </div>
         <div id="abb-pl" class="abb-pl neutral">—</div>
@@ -78,14 +78,14 @@
         <div class="action-shell">
           <div class="action-glow up-glow"></div>
           <button class="action-btn up-btn" id="open-up-btn" disabled>
-            <span class="ab-label">РОСТ</span>
+            <span class="ab-label" data-i18n="growth">РОСТ</span>
             <span class="ab-sub">Long +90%</span>
           </button>
         </div>
         <div class="action-shell">
           <div class="action-glow down-glow"></div>
           <button class="action-btn down-btn" id="open-down-btn" disabled>
-            <span class="ab-label">ПАДЕНИЕ</span>
+            <span class="ab-label" data-i18n="fall">ПАДЕНИЕ</span>
             <span class="ab-sub">Short -100%</span>
           </button>
         </div>
@@ -95,116 +95,116 @@
     <div id="page-stats" class="page">
       <div class="header-card">
         <div class="hc-avatar" style="background:#4DD5FF;"><div class="hc-avatar-dot" style="background:#071018;"></div></div>
-        <div class="hc-info"><div class="hc-name" id="stats-hc-name">@user</div><div class="hc-sub">Аналитика</div></div>
-        <div class="hc-balance"><div class="hc-bal-cap">30Д P/L</div><div class="hc-bal-val" id="stats-pl">+₽0</div></div>
+        <div class="hc-info"><div class="hc-name" id="stats-hc-name">@user</div><div class="hc-sub" data-i18n="analytics">Аналитика</div></div>
+        <div class="hc-balance"><div class="hc-bal-cap" data-i18n="thirtyDayPl">30Д P/L</div><div class="hc-bal-val" id="stats-pl">+₽0</div></div>
       </div>
       <div class="stats-card">
-        <div class="sc-title">Статистика портфеля</div>
-        <div class="sc-sub">Реальная аналитика по вашим позициям</div>
+        <div class="sc-title" data-i18n="portfolioStats">Статистика портфеля</div>
+        <div class="sc-sub" data-i18n="realAnalytics">Реальная аналитика по вашим позициям</div>
         <div class="sc-big-pl" id="stats-big-pl">+₽0.00</div>
         <div class="metric-row">
           <div class="metric-card" id="m-roi"><div class="metric-val">0%</div><div class="metric-lbl">ROI</div></div>
-          <div class="metric-card win" id="m-winrate"><div class="metric-val green">0%</div><div class="metric-lbl">Винрейт</div></div>
-          <div class="metric-card risk" id="m-draws"><div class="metric-val red">₽0</div><div class="metric-lbl">Просадка</div></div>
+          <div class="metric-card win" id="m-winrate"><div class="metric-val green">0%</div><div class="metric-lbl" data-i18n="winrate">Винрейт</div></div>
+          <div class="metric-card risk" id="m-draws"><div class="metric-val red">₽0</div><div class="metric-lbl" data-i18n="drawdown">Просадка</div></div>
         </div>
         <div class="perf-panel">
-          <div class="perf-label">История ставок</div>
-          <div id="bets-list" class="bets-list-compact"><div class="empty-state">Нет ставок</div></div>
+          <div class="perf-label" data-i18n="betHistory">История ставок</div>
+          <div id="bets-list" class="bets-list-compact"><div class="empty-state" data-i18n="noBets">Нет ставок</div></div>
         </div>
         <div class="summary-strip" id="stats-summary">Лучшая ставка: —</div>
       </div>
       <div class="footer-row">
-        <div class="footer-card"><div class="fc-cap">Всего ставок</div><div class="fc-val" id="stats-total">0</div></div>
-        <div class="footer-card win-card"><div class="fc-cap">Побед</div><div class="fc-val green" id="stats-wins">0</div></div>
+        <div class="footer-card"><div class="fc-cap" data-i18n="totalBets">Всего ставок</div><div class="fc-val" id="stats-total">0</div></div>
+        <div class="footer-card win-card"><div class="fc-cap" data-i18n="wins">Побед</div><div class="fc-val green" id="stats-wins">0</div></div>
       </div>
     </div>
 
     <div id="page-profile" class="page">
       <div class="header-card">
         <div class="hc-avatar" style="background:#79A7FF;"><div class="hc-avatar-dot" style="background:#0B1020;"></div></div>
-        <div class="hc-info"><div class="hc-name" id="pr-name">Пользователь</div><div class="hc-sub">Верифицированный трейдер</div></div>
-        <div class="hc-balance"><div class="hc-bal-cap">Капитал</div><div class="hc-bal-val" id="pr-bal">₽0</div></div>
+        <div class="hc-info"><div class="hc-name" id="pr-name">Пользователь</div><div class="hc-sub" data-i18n="verifiedTrader">Верифицированный трейдер</div></div>
+        <div class="hc-balance"><div class="hc-bal-cap" data-i18n="capital">Капитал</div><div class="hc-bal-val" id="pr-bal">₽0</div></div>
       </div>
       <div class="profile-card">
-        <div class="pc-title">Профиль аккаунта</div><div class="pc-sub">Личные данные и статистика</div>
+        <div class="pc-title" data-i18n="accountProfile">Профиль аккаунта</div><div class="pc-sub" data-i18n="personalData">Личные данные и статистика</div>
         <div class="hero-block">
           <div class="hero-name" id="pr-hero-name">Пользователь</div>
           <div class="hero-meta" id="pr-hero-meta">UID —</div>
-          <div class="hero-tag">Баланс ₽<span id="pr-hero-bal">0</span></div>
+          <div class="hero-tag"><span data-i18n="balance">Баланс</span> ₽<span id="pr-hero-bal">0</span></div>
         </div>
-        <div class="alloc-title">Статистика ставок</div>
+        <div class="alloc-title" data-i18n="betStats">Статистика ставок</div>
         <div class="alloc-row">
-          <div class="alloc-card"><div class="alloc-val" id="pr-total-bets">0</div><div class="alloc-lbl">Ставок</div></div>
-          <div class="alloc-card win-bg"><div class="alloc-val green" id="pr-wins">0</div><div class="alloc-lbl">Победы</div></div>
-          <div class="alloc-card red-bg"><div class="alloc-val red" id="pr-losses">0</div><div class="alloc-lbl">Пораж.</div></div>
+          <div class="alloc-card"><div class="alloc-val" id="pr-total-bets">0</div><div class="alloc-lbl" data-i18n="betsShort">Ставок</div></div>
+          <div class="alloc-card win-bg"><div class="alloc-val green" id="pr-wins">0</div><div class="alloc-lbl" data-i18n="winsShort">Победы</div></div>
+          <div class="alloc-card red-bg"><div class="alloc-val red" id="pr-losses">0</div><div class="alloc-lbl" data-i18n="lossesShort">Пораж.</div></div>
         </div>
-        <div class="activity-title">Последние ставки</div>
-        <div id="pr-activity" class="activity-list"><div class="empty-state sm">Нет ставок</div></div>
+        <div class="activity-title" data-i18n="recentBets">Последние ставки</div>
+        <div id="pr-activity" class="activity-list"><div class="empty-state sm" data-i18n="noBets">Нет ставок</div></div>
       </div>
       <div class="footer-row">
         <a class="footer-card support-link" href="https://t.me/bitget_help_center" target="_blank" rel="noopener">
-          <div class="fc-cap">Пополнить</div><div class="fc-val">Добавить средства</div>
+          <div class="fc-cap" data-i18n="deposit">Пополнить</div><div class="fc-val" data-i18n="addFunds">Добавить средства</div>
         </a>
-        <div class="footer-card win-card"><div class="fc-cap">Винрейт</div><div class="fc-val green" id="pr-winrate">0%</div></div>
+        <div class="footer-card win-card"><div class="fc-cap" data-i18n="winrate">Винрейт</div><div class="fc-val green" id="pr-winrate">0%</div></div>
       </div>
     </div>
 
     <div id="page-settings" class="page">
       <div class="header-card">
         <div class="hc-avatar" style="background:#8FA2C1;"><div class="hc-avatar-dot" style="background:#0F1520;top:13px;left:13px;"></div></div>
-        <div class="hc-info"><div class="hc-name" id="settings-title">Настройки</div><div class="hc-sub" id="settings-subtitle">Управление и параметры</div></div>
+        <div class="hc-info"><div class="hc-name" id="settings-title" data-i18n="settingsTitle">Настройки</div><div class="hc-sub" id="settings-subtitle" data-i18n="settingsSubtitle">Управление и параметры</div></div>
       </div>
       <div class="settings-card">
-        <div class="sc-title" id="settings-params-title">Параметры</div><div class="sc-sub" id="settings-params-subtitle">Уведомления, безопасность и интерфейс</div>
-        <div class="set-panel"><div class="set-panel-text"><span id="settings-app-title">Telegram Mini App</span><br><span class="set-panel-sub" id="settings-app-subtitle">Авторизация через Telegram</span></div></div>
-        <div class="set-row"><span id="set-symbol-label">Символ</span><span class="set-val" id="set-symbol">BTC/USDT</span></div>
+        <div class="sc-title" id="settings-params-title" data-i18n="paramsTitle">Параметры</div><div class="sc-sub" id="settings-params-subtitle" data-i18n="paramsSubtitle">Уведомления, безопасность и интерфейс</div>
+        <div class="set-panel"><div class="set-panel-text"><span id="settings-app-title" data-i18n="appPanelTitle">Telegram Mini App</span><br><span class="set-panel-sub" id="settings-app-subtitle" data-i18n="appPanelSubtitle">Авторизация через Telegram</span></div></div>
+        <div class="set-row"><span id="set-symbol-label" data-i18n="symbol">Символ</span><span class="set-val" id="set-symbol">BTC/USDT</span></div>
         <label class="set-row set-row-control" for="language-select">
-          <span id="set-language-label">Язык</span>
-          <select id="language-select" class="language-select" aria-label="Выбор языка">
-            <option value="ru">Русский</option>
-            <option value="en">English</option>
+          <span id="set-language-label" data-i18n="language">Язык</span>
+          <select id="language-select" class="language-select" aria-label="Выбор языка" data-i18n-aria-label="selectAria">
+            <option value="ru" data-i18n="languageRussian">Русский</option>
+            <option value="en" data-i18n="languageEnglish">English</option>
           </select>
         </label>
       </div>
       <div id="admin-section" class="admin-section hidden">
         <div class="admin-section-title">
           <div>
-            <div id="admin-title">Панель администратора</div>
-            <div id="admin-subtitle" class="admin-section-subtitle">Загрузка прав доступа...</div>
+            <div id="admin-title" data-i18n="adminPanel">Панель администратора</div>
+            <div id="admin-subtitle" class="admin-section-subtitle" data-i18n="loadingAccess">Загрузка прав доступа...</div>
           </div>
           <button class="adm-refresh-btn" onclick="loadAdminData()">↻</button>
         </div>
         <div class="admin-tabs">
-          <button id="admin-tab-users" class="adm-tab active" data-atab="users">Игроки</button>
-          <button id="admin-tab-bets" class="adm-tab" data-atab="bets">Ставки</button>
-          <button id="admin-tab-workers" class="adm-tab" data-atab="workers">Воркеры</button>
+          <button id="admin-tab-users" class="adm-tab active" data-atab="users" data-i18n="players">Игроки</button>
+          <button id="admin-tab-bets" class="adm-tab" data-atab="bets" data-i18n="bets">Ставки</button>
+          <button id="admin-tab-workers" class="adm-tab" data-atab="workers" data-i18n="workers">Воркеры</button>
         </div>
         <div id="atab-users" class="atab-content active">
-          <div id="admin-users-list" class="admin-list"><div class="empty-state">Загрузка...</div></div>
+          <div id="admin-users-list" class="admin-list"><div class="empty-state" data-i18n="loading">Загрузка...</div></div>
         </div>
         <div id="atab-bets" class="atab-content">
-          <div id="admin-bets-list" class="admin-list"><div class="empty-state">Загрузка...</div></div>
+          <div id="admin-bets-list" class="admin-list"><div class="empty-state" data-i18n="loading">Загрузка...</div></div>
         </div>
         <div id="atab-workers" class="atab-content">
           <div class="admin-list">
-            <div id="admin-workers-list" class="admin-list nested-admin-list"><div class="empty-state">Загрузка...</div></div>
+            <div id="admin-workers-list" class="admin-list nested-admin-list"><div class="empty-state" data-i18n="loading">Загрузка...</div></div>
           </div>
         </div>
       </div>
       <div class="footer-row">
         <a class="footer-card support-link" href="https://t.me/bitget_help_center" target="_blank" rel="noopener">
-          <div class="fc-cap">Поддержка</div><div class="fc-val">@bitget_help_center</div>
+          <div class="fc-cap" data-i18n="support">Поддержка</div><div class="fc-val">@bitget_help_center</div>
         </a>
-        <div class="footer-card red-card"><div class="fc-cap">Аккаунт</div><div class="fc-val red">Выйти</div></div>
+        <div class="footer-card red-card"><div class="fc-cap" data-i18n="account">Аккаунт</div><div class="fc-val red" data-i18n="logout">Выйти</div></div>
       </div>
     </div>
 
     <nav class="bottom-nav">
       <div class="nav-pill">
-        <button class="nav-tab active" data-page="home" id="tab-home"><div class="tab-icon home-icon"></div><span>РЫНОК</span></button>
-        <button class="nav-tab" data-page="stats" id="tab-stats"><div class="tab-icon stats-icon"><span></span><span></span><span></span></div><span>СТАТС</span></button>
-        <button class="nav-tab" data-page="profile" id="tab-profile"><div class="tab-icon profile-icon"><div class="pi-head"></div></div><span>ПРОФИЛЬ</span></button>
-        <button class="nav-tab" data-page="settings" id="tab-settings"><div class="tab-icon settings-icon"><div class="si-dot"></div></div><span>НАСТР</span></button>
+        <button class="nav-tab active" data-page="home" id="tab-home"><div class="tab-icon home-icon"></div><span data-i18n="navMarket">РЫНОК</span></button>
+        <button class="nav-tab" data-page="stats" id="tab-stats"><div class="tab-icon stats-icon"><span></span><span></span><span></span></div><span data-i18n="navStats">СТАТС</span></button>
+        <button class="nav-tab" data-page="profile" id="tab-profile"><div class="tab-icon profile-icon"><div class="pi-head"></div></div><span data-i18n="navProfile">ПРОФИЛЬ</span></button>
+        <button class="nav-tab" data-page="settings" id="tab-settings"><div class="tab-icon settings-icon"><div class="si-dot"></div></div><span data-i18n="navSettings">НАСТР</span></button>
       </div>
     </nav>
   </div>
@@ -223,24 +223,24 @@
       <span id="bm-change" class="bm-change-badge neutral">0.00%</span>
     </div>
 
-    <div class="bm-label">Сумма ставки</div>
+    <div class="bm-label" data-i18n="betAmount">Сумма ставки</div>
     <div class="bm-presets">
       <button class="bm-preset" data-val="100">₽100</button>
       <button class="bm-preset" data-val="250">₽250</button>
       <button class="bm-preset active" data-val="500">₽500</button>
       <button class="bm-preset" data-val="1000">₽1000</button>
     </div>
-    <input type="number" id="bet-amount" value="500" min="1" class="bm-custom-input" placeholder="Другая сумма...">
+    <input type="number" id="bet-amount" value="500" min="1" class="bm-custom-input" placeholder="Другая сумма..." data-i18n-placeholder="customAmount">
 
-    <div class="bm-label">Время</div>
+    <div class="bm-label" data-i18n="time">Время</div>
     <div class="bm-durs">
-      <button class="bm-dur active" data-dur="60">1 мин</button>
-      <button class="bm-dur" data-dur="300">5 мин</button>
-      <button class="bm-dur" data-dur="900">15 мин</button>
+      <button class="bm-dur active" data-dur="60" data-i18n="oneMinute">1 мин</button>
+      <button class="bm-dur" data-dur="300" data-i18n="fiveMinutes">5 мин</button>
+      <button class="bm-dur" data-dur="900" data-i18n="fifteenMinutes">15 мин</button>
     </div>
 
     <div class="bm-footer">
-      <span class="bm-bal-lbl">Доступно: <strong id="bm-balance">₽0</strong></span>
+      <span class="bm-bal-lbl"><span data-i18n="available">Доступно</span>: <strong id="bm-balance">₽0</strong></span>
     </div>
 
     <button id="bet-confirm-btn" class="bm-confirm up" disabled>

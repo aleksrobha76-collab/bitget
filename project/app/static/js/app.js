@@ -11,7 +11,37 @@ const DEFAULT_LANGUAGE = 'ru';
 const LANGUAGE_LABELS = {
   ru: {
     documentLang: 'ru',
+    locale: 'ru-RU',
     selectAria: 'Выбор языка',
+    languageRussian: 'Русский',
+    languageEnglish: 'English',
+    homePremiumTrader: 'Премиум трейдер',
+    balance: 'Баланс',
+    pairMenuAria: 'Выбор торговой пары',
+    timeLeft: 'Осталось',
+    growth: 'РОСТ',
+    fall: 'ПАДЕНИЕ',
+    analytics: 'Аналитика',
+    thirtyDayPl: '30Д P/L',
+    portfolioStats: 'Статистика портфеля',
+    realAnalytics: 'Реальная аналитика по вашим позициям',
+    winrate: 'Винрейт',
+    drawdown: 'Просадка',
+    betHistory: 'История ставок',
+    noBets: 'Нет ставок',
+    totalBets: 'Всего ставок',
+    wins: 'Побед',
+    verifiedTrader: 'Верифицированный трейдер',
+    capital: 'Капитал',
+    accountProfile: 'Профиль аккаунта',
+    personalData: 'Личные данные и статистика',
+    betStats: 'Статистика ставок',
+    betsShort: 'Ставок',
+    winsShort: 'Победы',
+    lossesShort: 'Пораж.',
+    recentBets: 'Последние ставки',
+    deposit: 'Пополнить',
+    addFunds: 'Добавить средства',
     settingsTitle: 'Настройки',
     settingsSubtitle: 'Управление и параметры',
     paramsTitle: 'Параметры',
@@ -20,10 +50,119 @@ const LANGUAGE_LABELS = {
     appPanelSubtitle: 'Авторизация через Telegram',
     symbol: 'Символ',
     language: 'Язык',
+    adminPanel: 'Панель администратора',
+    loadingAccess: 'Загрузка прав доступа...',
+    players: 'Игроки',
+    clients: 'Клиенты',
+    bets: 'Ставки',
+    myBets: 'Мои ставки',
+    workers: 'Воркеры',
+    loading: 'Загрузка...',
+    support: 'Поддержка',
+    account: 'Аккаунт',
+    logout: 'Выйти',
+    navMarket: 'РЫНОК',
+    navStats: 'СТАТС',
+    navProfile: 'ПРОФИЛЬ',
+    navSettings: 'НАСТР',
+    betAmount: 'Сумма ставки',
+    customAmount: 'Другая сумма...',
+    time: 'Время',
+    oneMinute: '1 мин',
+    fiveMinutes: '5 мин',
+    fifteenMinutes: '15 мин',
+    available: 'Доступно',
+    selectedPair: 'Выбранная пара',
+    cannotChangePair: symbol => `Нельзя менять пару, пока активна ставка по ${symbol}.`,
+    chartUnavailable: 'График временно недоступен',
+    trendEntry: 'ВХОД',
+    trendTarget: 'ЦЕЛЬ',
+    trendStop: 'СТОП',
+    trendBet: 'СТАВКА',
+    quotesPending: 'Ожидаем котировки',
+    userFallback: 'Пользователь',
+    placeBet: (amount, direction) => `Поставить ₽${amount} на ${direction}`,
+    amountRequired: 'Введите сумму ставки',
+    insufficientFunds: balance => `Недостаточно средств. Баланс: ₽${balance}`,
+    betPlaceError: 'Ошибка при размещении ставки',
+    entry: 'Вход',
+    inGame: 'в игре',
+    upSubtitle: 'Long +90%',
+    downSubtitle: 'Short -100%',
+    winMessage: payout => `Победа! +₽${payout}`,
+    lossMessage: amount => `Поражение. -₽${amount}`,
+    bestBet: (payout, symbol) => `Лучшая ставка: ₽${payout} на ${symbol}`,
+    bestBetEmpty: 'Лучшая ставка: —',
+    pending: 'В игре',
+    win: 'Победа',
+    loss: 'Поражение',
+    adminOwnerTitle: 'Панель главного админа',
+    adminWorkerTitle: 'Панель воркера',
+    adminOwnerSubtitle: 'Игроки, ставки и контроль воркеров в одном месте.',
+    adminWorkerSubtitle: (code, count) => `Ваш код: ${code} • Клиентов: ${count}`,
+    loadPlayersError: 'не удалось загрузить игроков',
+    loadBetsError: 'не удалось загрузить ставки',
+    loadWorkersError: 'не удалось загрузить воркеров',
+    error: 'Ошибка',
+    referralTest: 'Тестовый код 0000',
+    referralBy: (username, code) => `Привёл @${username} • код ${code}`,
+    referralEmpty: 'Клиент без воркера',
+    noPlayers: 'Нет игроков',
+    noClientsList: 'Нет клиентов',
+    outcomeSetting: 'Исход ставок',
+    random: 'Рандом',
+    balanceRub: 'Баланс (₽)',
+    save: 'Сохранить',
+    invalidPlayerId: 'Некорректный ID игрока',
+    validAmount: 'Введите корректную сумму',
+    balanceUpdated: amount => `Баланс обновлён: ₽${amount}`,
+    player: 'Игрок',
+    worker: 'Воркер',
+    instrument: 'Инструмент',
+    direction: 'Направление',
+    stake: 'Ставка',
+    status: 'Статус',
+    date: 'Дата',
+    test: 'тест',
+    noWorkers: 'Нет воркеров',
+    testCode: 'Тестовый код',
+    betsCount: count => `${count} ставок`,
+    noClients: 'Пока нет клиентов',
+    codeClients: (code, count) => `Код ${code} • Клиентов ${count}`,
   },
   en: {
     documentLang: 'en',
+    locale: 'en-US',
     selectAria: 'Language selection',
+    languageRussian: 'Русский',
+    languageEnglish: 'English',
+    homePremiumTrader: 'Premium trader',
+    balance: 'Balance',
+    pairMenuAria: 'Trading pair selection',
+    timeLeft: 'Time left',
+    growth: 'UP',
+    fall: 'DOWN',
+    analytics: 'Analytics',
+    thirtyDayPl: '30D P/L',
+    portfolioStats: 'Portfolio statistics',
+    realAnalytics: 'Real analytics for your positions',
+    winrate: 'Win rate',
+    drawdown: 'Drawdown',
+    betHistory: 'Bet history',
+    noBets: 'No bets',
+    totalBets: 'Total bets',
+    wins: 'Wins',
+    verifiedTrader: 'Verified trader',
+    capital: 'Capital',
+    accountProfile: 'Account profile',
+    personalData: 'Personal data and statistics',
+    betStats: 'Bet statistics',
+    betsShort: 'Bets',
+    winsShort: 'Wins',
+    lossesShort: 'Losses',
+    recentBets: 'Recent bets',
+    deposit: 'Deposit',
+    addFunds: 'Add funds',
     settingsTitle: 'Settings',
     settingsSubtitle: 'Controls and preferences',
     paramsTitle: 'Preferences',
@@ -32,6 +171,85 @@ const LANGUAGE_LABELS = {
     appPanelSubtitle: 'Telegram authorization',
     symbol: 'Symbol',
     language: 'Language',
+    adminPanel: 'Admin panel',
+    loadingAccess: 'Loading access...',
+    players: 'Players',
+    clients: 'Clients',
+    bets: 'Bets',
+    myBets: 'My bets',
+    workers: 'Workers',
+    loading: 'Loading...',
+    support: 'Support',
+    account: 'Account',
+    logout: 'Log out',
+    navMarket: 'MARKET',
+    navStats: 'STATS',
+    navProfile: 'PROFILE',
+    navSettings: 'SETTINGS',
+    betAmount: 'Bet amount',
+    customAmount: 'Custom amount...',
+    time: 'Time',
+    oneMinute: '1 min',
+    fiveMinutes: '5 min',
+    fifteenMinutes: '15 min',
+    available: 'Available',
+    selectedPair: 'Selected pair',
+    cannotChangePair: symbol => `You cannot change the pair while a ${symbol} bet is active.`,
+    chartUnavailable: 'Chart is temporarily unavailable',
+    trendEntry: 'ENTRY',
+    trendTarget: 'TARGET',
+    trendStop: 'STOP',
+    trendBet: 'BET',
+    quotesPending: 'Waiting for quotes',
+    userFallback: 'User',
+    placeBet: (amount, direction) => `Place ₽${amount} on ${direction}`,
+    amountRequired: 'Enter the bet amount',
+    insufficientFunds: balance => `Not enough funds. Balance: ₽${balance}`,
+    betPlaceError: 'Failed to place bet',
+    entry: 'Entry',
+    inGame: 'in game',
+    upSubtitle: 'Long +90%',
+    downSubtitle: 'Short -100%',
+    winMessage: payout => `Win! +₽${payout}`,
+    lossMessage: amount => `Loss. -₽${amount}`,
+    bestBet: (payout, symbol) => `Best bet: ₽${payout} on ${symbol}`,
+    bestBetEmpty: 'Best bet: —',
+    pending: 'In game',
+    win: 'Win',
+    loss: 'Loss',
+    adminOwnerTitle: 'Main admin panel',
+    adminWorkerTitle: 'Worker panel',
+    adminOwnerSubtitle: 'Players, bets, and worker control in one place.',
+    adminWorkerSubtitle: (code, count) => `Your code: ${code} • Clients: ${count}`,
+    loadPlayersError: 'failed to load players',
+    loadBetsError: 'failed to load bets',
+    loadWorkersError: 'failed to load workers',
+    error: 'Error',
+    referralTest: 'Test code 0000',
+    referralBy: (username, code) => `Referred by @${username} • code ${code}`,
+    referralEmpty: 'Client without worker',
+    noPlayers: 'No players',
+    noClientsList: 'No clients',
+    outcomeSetting: 'Bet outcome',
+    random: 'Random',
+    balanceRub: 'Balance (₽)',
+    save: 'Save',
+    invalidPlayerId: 'Invalid player ID',
+    validAmount: 'Enter a valid amount',
+    balanceUpdated: amount => `Balance updated: ₽${amount}`,
+    player: 'Player',
+    worker: 'Worker',
+    instrument: 'Instrument',
+    direction: 'Direction',
+    stake: 'Bet',
+    status: 'Status',
+    date: 'Date',
+    test: 'test',
+    noWorkers: 'No workers',
+    testCode: 'Test code',
+    betsCount: count => `${count} bets`,
+    noClients: 'No clients yet',
+    codeClients: (code, count) => `Code ${code} • Clients ${count}`,
   },
 };
 
@@ -146,6 +364,29 @@ function setText(id, value) {
   if (node) node.textContent = value;
 }
 
+function t(key, ...args) {
+  const labels = LANGUAGE_LABELS[S.language] || LANGUAGE_LABELS[DEFAULT_LANGUAGE];
+  const fallback = LANGUAGE_LABELS[DEFAULT_LANGUAGE] || {};
+  const value = labels[key] ?? fallback[key] ?? key;
+  return typeof value === 'function' ? value(...args) : value;
+}
+
+function getLocale() {
+  return t('locale');
+}
+
+function applyStaticTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(node => {
+    node.textContent = t(node.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(node => {
+    node.setAttribute('placeholder', t(node.dataset.i18nPlaceholder));
+  });
+  document.querySelectorAll('[data-i18n-aria-label]').forEach(node => {
+    node.setAttribute('aria-label', t(node.dataset.i18nAriaLabel));
+  });
+}
+
 function renderLanguageUI() {
   const labels = LANGUAGE_LABELS[S.language] || LANGUAGE_LABELS[DEFAULT_LANGUAGE];
   document.documentElement.lang = labels.documentLang;
@@ -154,14 +395,21 @@ function renderLanguageUI() {
     select.value = S.language;
     select.setAttribute('aria-label', labels.selectAria);
   }
-  setText('settings-title', labels.settingsTitle);
-  setText('settings-subtitle', labels.settingsSubtitle);
-  setText('settings-params-title', labels.paramsTitle);
-  setText('settings-params-subtitle', labels.paramsSubtitle);
-  setText('settings-app-title', labels.appPanelTitle);
-  setText('settings-app-subtitle', labels.appPanelSubtitle);
-  setText('set-symbol-label', labels.symbol);
-  setText('set-language-label', labels.language);
+  applyStaticTranslations();
+  renderBetButtonLabels();
+  renderPairUI();
+  renderUserUI();
+  updatePriceUI();
+  updateConfirmButton();
+  if (S.activeBet) showActiveBet();
+  if (S.page === 'stats') renderStatsPage();
+  if (S.page === 'profile') renderProfilePage();
+  if (S.admin.profile) {
+    renderAdminShell();
+    if (S.admin.users.length) renderAdminUsers();
+    if (S.admin.bets.length) renderAdminBets();
+    if (S.admin.workers.length) renderAdminWorkers();
+  }
 }
 
 function setLanguage(language) {
@@ -175,7 +423,7 @@ function getMarketOption(symbol = S.market.selectedSymbol) {
   return S.market.options.find(option => option.symbol === symbol) || {
     symbol,
     label: fmtSymbol(symbol),
-    name: 'Выбранная пара',
+    name: t('selectedPair'),
   };
 }
 
@@ -219,7 +467,7 @@ function renderPairUI() {
 
 function openPairMenu() {
   if (S.activeBet) {
-    showMessage(`Нельзя менять пару, пока активна ставка по ${fmtSymbol(S.activeBet.symbol)}.`);
+    showMessage(t('cannotChangePair', fmtSymbol(S.activeBet.symbol)));
     return;
   }
   S.market.menuOpen = true;
@@ -244,7 +492,7 @@ function selectMarket(symbol, options = {}) {
   const { persist = true, force = false, refresh = true } = options;
   if (!symbol) return;
   if (S.activeBet && !force && symbol !== S.market.selectedSymbol) {
-    showMessage(`Нельзя менять пару, пока активна ставка по ${fmtSymbol(S.activeBet.symbol)}.`);
+    showMessage(t('cannotChangePair', fmtSymbol(S.activeBet.symbol)));
     return;
   }
 
@@ -347,7 +595,7 @@ async function loadChart() {
     drawChart();
   } catch (error) {
     console.warn('chart', error);
-    if (!S.chart.candles.length) drawChartPlaceholder('График временно недоступен');
+    if (!S.chart.candles.length) drawChartPlaceholder(t('chartUnavailable'));
   } finally {
     loader?.classList.add('hidden');
   }
@@ -369,11 +617,11 @@ function updateTrendStrip() {
   if (!el('trend-text')) return;
   if (S.activeBet) {
     const bet = S.activeBet;
-    el('trend-text').textContent = `${fmtSymbol(bet.symbol)}   ${bet.direction === 'up' ? '↑ РОСТ' : '↓ ПАДЕНИЕ'}   ВХОД ${fmtPrice(bet.entry_price)}   СТАВКА ₽${bet.amount}`;
+    el('trend-text').textContent = `${fmtSymbol(bet.symbol)}   ${formatDirection(bet.direction, true)}   ${t('trendEntry')} ${fmtPrice(bet.entry_price)}   ${t('trendBet')} ₽${bet.amount}`;
   } else if (S.chart.price) {
-    el('trend-text').textContent = `${getSelectedMarketLabel()}   ВХОД ${fmtPrice(S.chart.price)}   ЦЕЛЬ ${fmtPrice(S.chart.price * 1.005)}   СТОП ${fmtPrice(S.chart.price * 0.995)}`;
+    el('trend-text').textContent = `${getSelectedMarketLabel()}   ${t('trendEntry')} ${fmtPrice(S.chart.price)}   ${t('trendTarget')} ${fmtPrice(S.chart.price * 1.005)}   ${t('trendStop')} ${fmtPrice(S.chart.price * 0.995)}`;
   } else {
-    el('trend-text').textContent = 'ВХОД —   ЦЕЛЬ —   СТОП —';
+    el('trend-text').textContent = `${t('trendEntry')} —   ${t('trendTarget')} —   ${t('trendStop')} —`;
   }
 
   const profitLoss = el('sc-pl');
@@ -394,7 +642,7 @@ function drawChart() {
   const wrap = el('chart-area');
   if (!canvas || !wrap) return;
   if (!S.chart.candles.length) {
-    drawChartPlaceholder('Ожидаем котировки');
+    drawChartPlaceholder(t('quotesPending'));
     return;
   }
 
@@ -564,7 +812,6 @@ window.addEventListener('resize', () => {
 
 function renderUserUI() {
   if (!S.user) return;
-  const name = S.user.first_name || S.user.username || 'Пользователь';
   const username = S.user.username ? '@' + S.user.username : 'ID ' + (S.user.telegram_id || '');
   if (el('hc-name')) el('hc-name').textContent = username;
   if (el('stats-hc-name')) el('stats-hc-name').textContent = username;
@@ -627,7 +874,7 @@ function openBetModal(direction) {
   const header = el('bm-dir-header');
   if (header) header.className = 'bm-dir-header ' + direction;
   if (el('bm-dir-arrow')) el('bm-dir-arrow').textContent = direction === 'up' ? '↑' : '↓';
-  if (el('bm-dir-title')) el('bm-dir-title').textContent = direction === 'up' ? 'РОСТ' : 'ПАДЕНИЕ';
+  if (el('bm-dir-title')) el('bm-dir-title').textContent = formatDirection(direction);
   updateModalHeader();
   updateConfirmButton();
   el('bet-modal')?.classList.add('open');
@@ -655,6 +902,7 @@ function closeBetModal() {
 function updateModalHeader() {
   const price = S.chart.price;
   const change = S.chart.change;
+  if (el('bm-dir-title')) el('bm-dir-title').textContent = formatDirection(S.modal.direction);
   if (el('bm-symbol')) el('bm-symbol').textContent = getSelectedMarketLabel();
   if (el('bm-price')) el('bm-price').textContent = price ? fmtPrice(price) : '—';
   if (el('bm-change')) {
@@ -670,7 +918,7 @@ function updateConfirmButton() {
   const amount = parseFloat(el('bet-amount')?.value || '0') || 0;
   const direction = S.modal.direction;
   button.className = 'bm-confirm ' + direction;
-  button.textContent = `Поставить ₽${amount} на ${direction === 'up' ? 'РОСТ' : 'ПАДЕНИЕ'}`;
+  button.textContent = t('placeBet', amount, formatDirection(direction));
   button.disabled = amount <= 0 || !S.initData;
 }
 
@@ -716,15 +964,21 @@ function disableBetButtons() {
   if (el('bet-confirm-btn')) el('bet-confirm-btn').disabled = true;
 }
 
+function renderBetButtonLabels() {
+  if (S.activeBet) return;
+  if (el('open-up-btn')?.querySelector('.ab-sub')) el('open-up-btn').querySelector('.ab-sub').textContent = t('upSubtitle');
+  if (el('open-down-btn')?.querySelector('.ab-sub')) el('open-down-btn').querySelector('.ab-sub').textContent = t('downSubtitle');
+}
+
 async function placeBet(direction) {
   const amount = parseFloat(el('bet-amount')?.value || '0');
   const duration = parseInt(document.querySelector('.bm-dur.active')?.dataset.dur || '60', 10);
   if (!amount || amount <= 0) {
-    showMessage('Введите сумму ставки');
+    showMessage(t('amountRequired'));
     return;
   }
   if (amount > S.balance) {
-    showMessage(`Недостаточно средств. Баланс: ₽${rub(S.balance)}`);
+    showMessage(t('insufficientFunds', rub(S.balance)));
     return;
   }
 
@@ -745,7 +999,7 @@ async function placeBet(direction) {
     S.tg?.HapticFeedback?.impactOccurred('medium');
   } catch (error) {
     enableBetButtons();
-    showMessage(error.message || 'Ошибка при размещении ставки');
+    showMessage(error.message || t('betPlaceError'));
   }
 }
 
@@ -760,10 +1014,10 @@ function showActiveBet() {
     el('abb-dir-icon').textContent = bet.direction === 'up' ? '↑' : '↓';
     el('abb-dir-icon').className = 'abb-dir ' + bet.direction;
   }
-  if (el('abb-label')) el('abb-label').textContent = `${fmtSymbol(bet.symbol)} • ${bet.direction === 'up' ? 'РОСТ' : 'ПАДЕНИЕ'} • ₽${bet.amount}`;
-  if (el('abb-entry')) el('abb-entry').textContent = 'Вход: ' + fmtPrice(bet.entry_price);
-  if (el('open-up-btn')?.querySelector('.ab-sub')) el('open-up-btn').querySelector('.ab-sub').textContent = '⏱ в игре';
-  if (el('open-down-btn')?.querySelector('.ab-sub')) el('open-down-btn').querySelector('.ab-sub').textContent = '⏱ в игре';
+  if (el('abb-label')) el('abb-label').textContent = `${fmtSymbol(bet.symbol)} • ${formatDirection(bet.direction)} • ₽${bet.amount}`;
+  if (el('abb-entry')) el('abb-entry').textContent = `${t('entry')}: ${fmtPrice(bet.entry_price)}`;
+  if (el('open-up-btn')?.querySelector('.ab-sub')) el('open-up-btn').querySelector('.ab-sub').textContent = `⏱ ${t('inGame')}`;
+  if (el('open-down-btn')?.querySelector('.ab-sub')) el('open-down-btn').querySelector('.ab-sub').textContent = `⏱ ${t('inGame')}`;
   startBetTimer(bet.resolve_at);
   updateActiveBetPL();
   updateTrendStrip();
@@ -772,8 +1026,7 @@ function showActiveBet() {
 function hideActiveBet() {
   clearTimeout(window.__betTimer);
   el('active-bet-bar')?.classList.add('hidden');
-  if (el('open-up-btn')?.querySelector('.ab-sub')) el('open-up-btn').querySelector('.ab-sub').textContent = 'Long +90%';
-  if (el('open-down-btn')?.querySelector('.ab-sub')) el('open-down-btn').querySelector('.ab-sub').textContent = 'Short -100%';
+  renderBetButtonLabels();
   renderPairUI();
   syncChartBetState();
 }
@@ -816,7 +1069,7 @@ async function pollResolution() {
       hideActiveBet();
       enableBetButtons();
       const won = bet.outcome === 'win';
-      showMessage(won ? `Победа! +₽${bet.payout.toFixed(2)}` : `Поражение. -₽${bet.amount.toFixed(2)}`);
+      showMessage(won ? t('winMessage', bet.payout.toFixed(2)) : t('lossMessage', bet.amount.toFixed(2)));
       S.tg?.HapticFeedback?.notificationOccurred(won ? 'success' : 'error');
       updateTrendStrip();
       return;
@@ -880,14 +1133,14 @@ function renderStatsPage() {
     const bestWin = [...wins].sort((a, b) => b.payout - a.payout)[0];
     if (el('stats-summary')) {
       el('stats-summary').textContent = bestWin
-        ? `Лучшая ставка: ₽${bestWin.payout.toFixed(2)} на ${fmtSymbol(bestWin.symbol)}`
-        : 'Лучшая ставка: —';
+        ? t('bestBet', bestWin.payout.toFixed(2), fmtSymbol(bestWin.symbol))
+        : t('bestBetEmpty');
     }
 
     const list = el('bets-list');
     if (!list) return;
     if (!S.bets.length) {
-      list.innerHTML = '<div class="empty-state">Нет ставок</div>';
+      list.innerHTML = `<div class="empty-state">${t('noBets')}</div>`;
       return;
     }
     list.innerHTML = S.bets.slice(0, 15).map(bet => {
@@ -896,12 +1149,12 @@ function renderStatsPage() {
         : bet.outcome === 'win'
           ? `<span class="blc-amount win">+₽${bet.payout.toFixed(2)}</span>`
           : `<span class="blc-amount lose">-₽${bet.amount.toFixed(2)}</span>`;
-      const date = new Date(bet.created_at * 1000).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      const date = new Date(bet.created_at * 1000).toLocaleString(getLocale(), { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
       return `<div class="blc-item">
         <div class="blc-left">
           <div class="blc-dir ${bet.direction}">${bet.direction === 'up' ? '↑' : '↓'}</div>
           <div>
-            <div class="blc-label">${fmtSymbol(bet.symbol)} • ${bet.direction === 'up' ? 'РОСТ' : 'ПАДЕНИЕ'}</div>
+            <div class="blc-label">${fmtSymbol(bet.symbol)} • ${formatDirection(bet.direction)}</div>
             <div class="blc-date">${date}</div>
           </div>
         </div>
@@ -926,13 +1179,13 @@ function renderProfilePage() {
     const activity = el('pr-activity');
     if (!activity) return;
     if (!S.bets.length) {
-      activity.innerHTML = '<div class="empty-state sm">Нет ставок</div>';
+      activity.innerHTML = `<div class="empty-state sm">${t('noBets')}</div>`;
       return;
     }
 
     activity.innerHTML = S.bets.slice(0, 3).map(bet => {
-      const direction = bet.direction === 'up' ? '↑ РОСТ' : '↓ ПАДЕНИЕ';
-      const status = bet.status === 'pending' ? 'В игре' : (bet.outcome === 'win' ? 'Победа' : 'Поражение');
+      const direction = formatDirection(bet.direction, true);
+      const status = formatStatus(bet);
       return `<div class="act-item">${fmtSymbol(bet.symbol)} ${direction} — ₽${bet.amount.toFixed(2)} — ${status}</div>`;
     }).join('');
   });
@@ -977,17 +1230,19 @@ function renderAdminShell() {
   if (!profile) return;
 
   const isOwner = profile.role === 'owner';
-  if (el('admin-title')) el('admin-title').textContent = isOwner ? 'Панель главного админа' : 'Панель воркера';
+  if (el('admin-title')) el('admin-title').textContent = isOwner ? t('adminOwnerTitle') : t('adminWorkerTitle');
   if (el('admin-subtitle')) {
     el('admin-subtitle').textContent = isOwner
-      ? 'Игроки, ставки и контроль воркеров в одном месте.'
-      : `Ваш код: ${profile.worker_code || '—'} • Клиентов: ${profile.clients_total || 0}`;
+      ? t('adminOwnerSubtitle')
+      : t('adminWorkerSubtitle', profile.worker_code || '—', profile.clients_total || 0);
   }
-  el('admin-tab-users')?.classList.toggle('hidden', !isOwner);
+  el('admin-tab-users')?.classList.remove('hidden');
   el('admin-tab-workers')?.classList.toggle('hidden', !isOwner);
-  if (el('admin-tab-bets')) el('admin-tab-bets').textContent = isOwner ? 'Ставки' : 'Мои ставки';
+  if (el('admin-tab-users')) el('admin-tab-users').textContent = isOwner ? t('players') : t('clients');
+  if (el('admin-tab-workers')) el('admin-tab-workers').textContent = t('workers');
+  if (el('admin-tab-bets')) el('admin-tab-bets').textContent = isOwner ? t('bets') : t('myBets');
   const activeTab = getCurrentAdminTab();
-  activateAdminTab(isOwner ? (activeTab === 'bets' || activeTab === 'workers' ? activeTab : 'users') : 'bets');
+  activateAdminTab(isOwner ? (activeTab === 'bets' || activeTab === 'workers' ? activeTab : 'users') : (activeTab === 'bets' ? 'bets' : 'users'));
 }
 
 async function loadAdminData() {
@@ -997,25 +1252,23 @@ async function loadAdminData() {
   renderAdminShell();
   const isOwner = S.admin.profile.role === 'owner';
   const [usersResult, betsResult, workersResult] = await Promise.allSettled([
-    isOwner ? api('GET', '/api/admin/users') : Promise.resolve(null),
+    api('GET', '/api/admin/users'),
     api('GET', '/api/admin/bets'),
     isOwner ? api('GET', '/api/admin/workers') : Promise.resolve(null),
   ]);
 
-  if (isOwner) {
-    if (usersResult.status === 'fulfilled' && usersResult.value) {
-      S.admin.users = usersResult.value.users || [];
-      renderAdminUsers();
-    } else {
-      el('admin-users-list').innerHTML = `<div class="empty-state">Ошибка: ${usersResult.reason?.message || 'не удалось загрузить игроков'}</div>`;
-    }
+  if (usersResult.status === 'fulfilled' && usersResult.value) {
+    S.admin.users = usersResult.value.users || [];
+    renderAdminUsers();
+  } else {
+    el('admin-users-list').innerHTML = `<div class="empty-state">${t('error')}: ${usersResult.reason?.message || t('loadPlayersError')}</div>`;
   }
 
   if (betsResult.status === 'fulfilled' && betsResult.value) {
     S.admin.bets = betsResult.value.bets || [];
     renderAdminBets();
   } else {
-    el('admin-bets-list').innerHTML = `<div class="empty-state">Ошибка: ${betsResult.reason?.message || 'не удалось загрузить ставки'}</div>`;
+    el('admin-bets-list').innerHTML = `<div class="empty-state">${t('error')}: ${betsResult.reason?.message || t('loadBetsError')}</div>`;
   }
 
   if (isOwner) {
@@ -1023,22 +1276,23 @@ async function loadAdminData() {
       S.admin.workers = workersResult.value.workers || [];
       renderAdminWorkers();
     } else {
-      el('admin-workers-list').innerHTML = `<div class="empty-state">Ошибка: ${workersResult.reason?.message || 'не удалось загрузить воркеров'}</div>`;
+      el('admin-workers-list').innerHTML = `<div class="empty-state">${t('error')}: ${workersResult.reason?.message || t('loadWorkersError')}</div>`;
     }
   }
 }
 
 function formatReferralLabel(user) {
-  if (user.worker_code === '0000') return 'Тестовый код 0000';
-  if (user.worker_username && user.worker_code) return `Привёл @${user.worker_username} • код ${user.worker_code}`;
-  return 'Клиент без воркера';
+  if (user.worker_code === '0000') return t('referralTest');
+  if (user.worker_username && user.worker_code) return t('referralBy', user.worker_username, user.worker_code);
+  return t('referralEmpty');
 }
 
 function renderAdminUsers() {
   const list = el('admin-users-list');
   if (!list) return;
+  const isOwner = S.admin.profile?.role === 'owner';
   if (!S.admin.users.length) {
-    list.innerHTML = '<div class="empty-state">Нет игроков</div>';
+    list.innerHTML = `<div class="empty-state">${isOwner ? t('noPlayers') : t('noClientsList')}</div>`;
     return;
   }
 
@@ -1047,6 +1301,15 @@ function renderAdminUsers() {
     const name = esc(user.first_name || user.username || ('ID ' + telegramId));
     const meta = [user.username ? '@' + user.username : null, 'ID ' + telegramId].filter(Boolean).join(' • ');
     const setting = user.outcome_setting || 'random';
+    const rightMeta = isOwner ? formatOutcome(setting) : t('betsCount', user.bets_count || 0);
+    const outcomeControls = isOwner ? `
+        <div class="auc-ctrl-lbl">${t('outcomeSetting')}</div>
+        <div class="outcome-btns">
+          <button class="outcome-btn win ${setting === 'win' ? 'active' : ''}" onclick="setOutcome(${telegramId}, 'win')">${t('win')}</button>
+          <button class="outcome-btn lose ${setting === 'lose' ? 'active' : ''}" onclick="setOutcome(${telegramId}, 'lose')">${t('loss')}</button>
+          <button class="outcome-btn rand ${setting === 'random' ? 'active' : ''}" onclick="setOutcome(${telegramId}, 'random')">${t('random')}</button>
+        </div>
+    ` : '';
     return `<div class="auc" id="auc-${telegramId}">
       <div class="auc-header" onclick="toggleAuc(${telegramId})">
         <div>
@@ -1056,20 +1319,15 @@ function renderAdminUsers() {
         </div>
         <div class="auc-right">
           <div class="auc-balance">₽${(user.balance || 0).toFixed(2)}</div>
-          <div class="auc-outcome" id="auc-outcome-${telegramId}">${setting}</div>
+          <div class="auc-outcome" id="auc-outcome-${telegramId}">${rightMeta}</div>
         </div>
       </div>
       <div class="auc-controls hidden" id="aucc-${telegramId}">
-        <div class="auc-ctrl-lbl">Исход ставок</div>
-        <div class="outcome-btns">
-          <button class="outcome-btn win ${setting === 'win' ? 'active' : ''}" onclick="setOutcome(${telegramId}, 'win')">Победа</button>
-          <button class="outcome-btn lose ${setting === 'lose' ? 'active' : ''}" onclick="setOutcome(${telegramId}, 'lose')">Поражение</button>
-          <button class="outcome-btn rand ${setting === 'random' ? 'active' : ''}" onclick="setOutcome(${telegramId}, 'random')">Рандом</button>
-        </div>
-        <div class="auc-ctrl-lbl">Баланс (₽)</div>
+        ${outcomeControls}
+        <div class="auc-ctrl-lbl">${t('balanceRub')}</div>
         <div class="balance-set-row">
           <input type="number" class="balance-input" id="balinput-${telegramId}" value="${(user.balance || 0).toFixed(2)}" min="0" step="100">
-          <button class="balance-set-btn" onclick="setBalance(${telegramId})">Сохранить</button>
+          <button class="balance-set-btn" onclick="setBalance(${telegramId})">${t('save')}</button>
         </div>
       </div>
     </div>`;
@@ -1083,7 +1341,7 @@ function toggleAuc(tid) {
 async function setOutcome(tid, setting) {
   const telegramId = parseInt(tid, 10);
   if (!Number.isFinite(telegramId)) {
-    showMessage('Некорректный ID игрока');
+    showMessage(t('invalidPlayerId'));
     return;
   }
 
@@ -1094,7 +1352,7 @@ async function setOutcome(tid, setting) {
     el('aucc-' + telegramId)?.querySelectorAll('.outcome-btn').forEach(button => {
       button.classList.toggle('active', button.classList.contains(setting) || (setting === 'random' && button.classList.contains('rand')));
     });
-    if (el('auc-outcome-' + telegramId)) el('auc-outcome-' + telegramId).textContent = setting;
+    if (el('auc-outcome-' + telegramId)) el('auc-outcome-' + telegramId).textContent = formatOutcome(setting);
     S.tg?.HapticFeedback?.selectionChanged();
   } catch (error) {
     showMessage(error.message);
@@ -1104,13 +1362,13 @@ async function setOutcome(tid, setting) {
 async function setBalance(tid) {
   const telegramId = parseInt(tid, 10);
   if (!Number.isFinite(telegramId)) {
-    showMessage('Некорректный ID игрока');
+    showMessage(t('invalidPlayerId'));
     return;
   }
 
   const amount = parseFloat(String(el('balinput-' + telegramId)?.value || '').replace(',', '.'));
   if (!Number.isFinite(amount) || amount < 0) {
-    showMessage('Введите корректную сумму');
+    showMessage(t('validAmount'));
     return;
   }
 
@@ -1120,7 +1378,7 @@ async function setBalance(tid) {
     if (user) user.balance = amount;
     const card = el('auc-' + telegramId);
     if (card) card.querySelector('.auc-balance').textContent = '₽' + amount.toFixed(2);
-    showMessage(`Баланс обновлён: ₽${amount.toFixed(2)}`);
+    showMessage(t('balanceUpdated', amount.toFixed(2)));
   } catch (error) {
     showMessage(error.message);
   }
@@ -1130,29 +1388,29 @@ function renderAdminBets() {
   const list = el('admin-bets-list');
   if (!list) return;
   if (!S.admin.bets.length) {
-    list.innerHTML = '<div class="empty-state">Нет ставок</div>';
+    list.innerHTML = `<div class="empty-state">${t('noBets')}</div>`;
     return;
   }
 
   list.innerHTML = S.admin.bets.map(bet => {
-    const date = new Date(bet.created_at * 1000).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const date = new Date(bet.created_at * 1000).toLocaleString(getLocale(), { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     const statusClass = bet.status === 'pending' ? 'pending' : bet.outcome;
-    const statusLabel = bet.status === 'pending' ? 'В игре' : (bet.outcome === 'win' ? 'Победа' : 'Поражение');
+    const statusLabel = formatStatus(bet);
     const workerLabel = bet.worker_code === '0000'
-      ? '0000 • тест'
+      ? `0000 • ${t('test')}`
       : bet.worker_username
         ? '@' + esc(bet.worker_username) + ' • ' + esc(bet.worker_code || '—')
         : '—';
     return `<div class="abc">
-      <div class="abc-row"><span class="abc-lbl">Игрок</span><span class="abc-val">${esc(bet.player_name || ('ID ' + bet.telegram_id))}</span></div>
+      <div class="abc-row"><span class="abc-lbl">${t('player')}</span><span class="abc-val">${esc(bet.player_name || ('ID ' + bet.telegram_id))}</span></div>
       <div class="abc-row"><span class="abc-lbl">Telegram</span><span class="abc-val">${bet.player_username ? '@' + esc(bet.player_username) : 'ID ' + bet.telegram_id}</span></div>
-      <div class="abc-row"><span class="abc-lbl">Воркер</span><span class="abc-val">${workerLabel}</span></div>
-      <div class="abc-row"><span class="abc-lbl">Инструмент</span><span class="abc-val">${fmtSymbol(bet.symbol)}</span></div>
-      <div class="abc-row"><span class="abc-lbl">Направление</span><span class="abc-val ${bet.direction}">${bet.direction === 'up' ? '↑ РОСТ' : '↓ ПАДЕНИЕ'}</span></div>
-      <div class="abc-row"><span class="abc-lbl">Ставка</span><span class="abc-val">₽${bet.amount.toFixed(2)}</span></div>
-      <div class="abc-row"><span class="abc-lbl">Вход</span><span class="abc-val">${fmtPrice(bet.entry_price)}</span></div>
-      <div class="abc-row"><span class="abc-lbl">Статус</span><span class="abc-val ${statusClass}">${statusLabel}</span></div>
-      <div class="abc-row"><span class="abc-lbl">Дата</span><span class="abc-val">${date}</span></div>
+      <div class="abc-row"><span class="abc-lbl">${t('worker')}</span><span class="abc-val">${workerLabel}</span></div>
+      <div class="abc-row"><span class="abc-lbl">${t('instrument')}</span><span class="abc-val">${fmtSymbol(bet.symbol)}</span></div>
+      <div class="abc-row"><span class="abc-lbl">${t('direction')}</span><span class="abc-val ${bet.direction}">${formatDirection(bet.direction, true)}</span></div>
+      <div class="abc-row"><span class="abc-lbl">${t('stake')}</span><span class="abc-val">₽${bet.amount.toFixed(2)}</span></div>
+      <div class="abc-row"><span class="abc-lbl">${t('entry')}</span><span class="abc-val">${fmtPrice(bet.entry_price)}</span></div>
+      <div class="abc-row"><span class="abc-lbl">${t('status')}</span><span class="abc-val ${statusClass}">${statusLabel}</span></div>
+      <div class="abc-row"><span class="abc-lbl">${t('date')}</span><span class="abc-val">${date}</span></div>
     </div>`;
   }).join('');
 }
@@ -1161,30 +1419,30 @@ function renderAdminWorkers() {
   const list = el('admin-workers-list');
   if (!list) return;
   if (!S.admin.workers.length) {
-    list.innerHTML = '<div class="empty-state">Нет воркеров</div>';
+    list.innerHTML = `<div class="empty-state">${t('noWorkers')}</div>`;
     return;
   }
 
   list.innerHTML = S.admin.workers.map(worker => {
     const isTest = Boolean(worker.is_test);
-    const title = isTest ? 'Тестовый код' : '@' + esc(worker.username || 'worker');
+    const title = isTest ? t('testCode') : '@' + esc(worker.username || 'worker');
     const clients = Array.isArray(worker.clients) ? worker.clients : [];
     const clientsHtml = clients.length
       ? clients.map(client => {
           const clientName = esc(client.first_name || client.username || ('ID ' + client.telegram_id));
-          const clientMeta = [client.username ? '@' + esc(client.username) : null, 'ID ' + client.telegram_id, `${client.bets_count || 0} ставок`].filter(Boolean).join(' • ');
+          const clientMeta = [client.username ? '@' + esc(client.username) : null, 'ID ' + client.telegram_id, t('betsCount', client.bets_count || 0)].filter(Boolean).join(' • ');
           return `<div class="worker-client-card">
             <div class="worker-client-name">${clientName}</div>
             <div class="worker-client-meta">${clientMeta}</div>
           </div>`;
         }).join('')
-      : '<div class="empty-state sm">Пока нет клиентов</div>';
+      : `<div class="empty-state sm">${t('noClients')}</div>`;
 
     return `<div class="worker-card ${isTest ? 'test' : ''}">
       <div class="worker-card-head">
         <div>
           <div class="worker-card-name">${title}</div>
-          <div class="worker-card-meta">Код ${worker.code} • Клиентов ${worker.client_count || 0}</div>
+          <div class="worker-card-meta">${t('codeClients', worker.code, worker.client_count || 0)}</div>
         </div>
         <div class="worker-code-badge">${worker.code}</div>
       </div>
@@ -1196,6 +1454,20 @@ function renderAdminWorkers() {
 function el(id) { return document.getElementById(id); }
 function pad(n) { return String(n).padStart(2, '0'); }
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+function formatDirection(direction, withArrow = false) {
+  const label = direction === 'up' ? t('growth') : t('fall');
+  if (!withArrow) return label;
+  return `${direction === 'up' ? '↑' : '↓'} ${label}`;
+}
+function formatStatus(bet) {
+  if (bet.status === 'pending') return t('pending');
+  return bet.outcome === 'win' ? t('win') : t('loss');
+}
+function formatOutcome(outcome) {
+  if (outcome === 'win') return t('win');
+  if (outcome === 'lose') return t('loss');
+  return t('random');
+}
 function esc(value) {
   return String(value || '')
     .replace(/&/g, '&amp;')
@@ -1204,15 +1476,15 @@ function esc(value) {
     .replace(/"/g, '&quot;');
 }
 function rub(value) {
-  return (parseFloat(value) || 0).toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  return (parseFloat(value) || 0).toLocaleString(getLocale(), { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 function fmtPrice(value) {
   if (!value && value !== 0) return '—';
-  return '$' + parseFloat(value).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return '$' + parseFloat(value).toLocaleString(getLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 function fmtPriceShort(value) {
   if (!value && value !== 0) return '—';
-  return '$' + parseFloat(value).toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  return '$' + parseFloat(value).toLocaleString(getLocale(), { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 function fmtSymbol(symbol) {
   if (!symbol) return '—';

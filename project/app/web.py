@@ -257,15 +257,23 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
     async def admin_users(request: Request) -> dict:
         init_data = request.headers.get("X-Telegram-Init-Data", "")
         try:
-            owner = ensure_owner(init_data, settings)
+            admin = ensure_admin_access(init_data, settings, storage)
         except AdminAccessError as exc:
             raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc)) from exc
 
-        users = filter_owner_visible_users(storage.list_users())
+        if admin.role == "worker":
+            if not admin.worker_code:
+                raise HTTPException(403, "Worker code is missing")
+            users = storage.list_referred_users(worker_code=admin.worker_code)
+        else:
+            users = filter_owner_visible_users(storage.list_users())
+
         return {
             "admin": {
-                "telegram_id": owner.telegram_id,
-                "username": owner.username,
+                "telegram_id": admin.telegram_id,
+                "username": admin.username,
+                "role": admin.role,
+                "worker_code": admin.worker_code,
             },
             "users": users,
             "total": len(users),
@@ -289,9 +297,17 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
     async def admin_set_balance(request: Request, body: BalanceRequest) -> dict:
         init_data = request.headers.get("X-Telegram-Init-Data", "")
         try:
-            ensure_owner(init_data, settings)
+            admin = ensure_admin_access(init_data, settings, storage)
         except AdminAccessError as exc:
             raise HTTPException(403, str(exc)) from exc
+        if body.amount < 0:
+            raise HTTPException(400, "amount must be non-negative")
+        if admin.role == "worker":
+            user = storage.get_user(body.telegram_id)
+            if user is None:
+                raise HTTPException(404, "User not found")
+            if str(user.get("worker_code") or "") != str(admin.worker_code):
+                raise HTTPException(403, "Worker can only edit own clients")
         new_balance = storage.set_balance(body.telegram_id, body.amount)
         if new_balance is None:
             raise HTTPException(404, "User not found")
