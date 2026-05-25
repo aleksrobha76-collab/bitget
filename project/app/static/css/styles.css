@@ -489,7 +489,10 @@ html, body { height: 100%; background: var(--bg); color: var(--text); overflow: 
 .set-panel-text { font-size: 14px; font-weight: 700; }
 .set-panel-sub  { font-size: 11px; font-weight: 600; color: var(--muted); }
 .set-row { display: flex; justify-content: space-between; align-items: center; background: #121720; border-radius: 16px; padding: 14px 16px; margin-bottom: 7px; font-size: 13px; font-weight: 700; color: var(--muted2); }
+.set-row-control { cursor: pointer; }
 .set-val { color: var(--text); }
+.language-select { min-width: 116px; appearance: none; -webkit-appearance: none; background: var(--card); border: 1px solid var(--border); border-radius: 12px; color: var(--text); cursor: pointer; font: inherit; font-size: 12px; font-weight: 700; outline: none; padding: 8px 30px 8px 12px; text-align: left; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
+.language-select:focus { border-color: var(--green2); box-shadow: 0 0 0 2px rgba(35,230,166,.12); }
 
 /* ═══ ADMIN ═══ */
 .admin-section { background: var(--card-deep); border-radius: 24px; border: 1px solid var(--border); overflow: hidden; flex-shrink: 0; }
