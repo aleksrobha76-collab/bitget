@@ -24,7 +24,7 @@ from .market_data import (
     get_klines as fetch_klines,
     get_ticker24h as fetch_ticker24h,
 )
-from .storage import UserStorage, normalize_username
+from .storage import SUPPORTED_CURRENCIES, UserStorage, normalize_currency, normalize_username
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +44,10 @@ class OutcomeRequest(BaseModel):
 class BalanceRequest(BaseModel):
     telegram_id: int
     amount: float
+
+
+class CurrencyRequest(BaseModel):
+    currency: str
 
 
 def current_server_time() -> float:
@@ -170,6 +174,7 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
             "username": user.get("username"),
             "first_name": user.get("first_name"),
             "balance": user.get("balance", 0.0),
+            "currency": user.get("currency", "RUB"),
             "active_bet": active,
             "worker_code": user.get("worker_code"),
             "worker_username": user.get("worker_username"),
@@ -188,8 +193,35 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
         return {
             "bets": bets,
             "balance": user.get("balance", 0.0) if user else 0.0,
+            "currency": user.get("currency", "RUB") if user else "RUB",
             "server_time": current_server_time(),
         }
+
+    @app.post("/api/me/currency")
+    async def set_me_currency(request: Request, body: CurrencyRequest) -> dict:
+        init_data = request.headers.get("X-Telegram-Init-Data", "")
+        try:
+            tg_user = validate_init_data(init_data, settings.bot_token)
+        except Exception as exc:
+            raise HTTPException(401, "Unauthorized") from exc
+
+        requested_currency = str(body.currency or "").strip().upper()
+        if requested_currency not in SUPPORTED_CURRENCIES:
+            raise HTTPException(400, "currency must be RUB, USD, or BYN")
+        currency = normalize_currency(requested_currency)
+        saved = storage.set_currency(tg_user.telegram_id, currency)
+        if saved is None:
+            storage.upsert_user(
+                {
+                    "telegram_id": tg_user.telegram_id,
+                    "username": tg_user.username,
+                    "first_name": tg_user.first_name,
+                    "last_name": tg_user.last_name,
+                    "currency": currency,
+                }
+            )
+            saved = currency
+        return {"ok": True, "currency": saved, "server_time": current_server_time()}
 
     @app.post("/api/bet")
     async def place_bet(request: Request, body: BetRequest) -> dict:
@@ -227,6 +259,7 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
         return {
             "bet": bet,
             "balance": user.get("balance", 0.0) if user else 0.0,
+            "currency": user.get("currency", "RUB") if user else "RUB",
             "server_time": current_server_time(),
         }
 

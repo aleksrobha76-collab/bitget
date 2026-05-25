@@ -175,7 +175,7 @@
           <div class="hero-block">
             <div class="hero-name" id="pr-hero-name">Пользователь</div>
             <div class="hero-meta" id="pr-hero-meta">UID —</div>
-            <div class="hero-tag"><span data-i18n="balance">Баланс</span> ₽<span id="pr-hero-bal">0</span></div>
+            <div class="hero-tag" id="pr-hero-bal-wrap"><span data-i18n="balance">Баланс</span> ₽<span id="pr-hero-bal">0</span></div>
           </div>
           <div class="alloc-title" data-i18n="betStats">Статистика ставок</div>
           <div class="alloc-row">
@@ -237,6 +237,14 @@
             <select id="language-select" class="language-select" aria-label="Выбор языка" data-i18n-aria-label="selectAria">
               <option value="ru" data-i18n="languageRussian">Русский</option>
               <option value="en" data-i18n="languageEnglish">English</option>
+            </select>
+          </label>
+          <label class="set-row set-row-control" for="currency-select">
+            <span id="set-currency-label" data-i18n="accountCurrency">Валюта аккаунта</span>
+            <select id="currency-select" class="language-select" aria-label="Выбор валюты" data-i18n-aria-label="currencyAria">
+              <option value="RUB" data-i18n="currencyRub">Российский рубль</option>
+              <option value="USD" data-i18n="currencyUsd">Доллар США</option>
+              <option value="BYN" data-i18n="currencyByn">Белорусский рубль</option>
             </select>
           </label>
         </div>

@@ -14,6 +14,8 @@ from psycopg_pool import ConnectionPool
 
 
 TEST_WORKER_CODE = "0000"
+DEFAULT_CURRENCY = "RUB"
+SUPPORTED_CURRENCIES = frozenset({"RUB", "USD", "BYN"})
 
 
 def normalize_username(value: object) -> str | None:
@@ -22,6 +24,11 @@ def normalize_username(value: object) -> str | None:
 
     normalized = value.strip().lstrip("@").lower()
     return normalized or None
+
+
+def normalize_currency(value: object) -> str:
+    normalized = str(value or "").strip().upper()
+    return normalized if normalized in SUPPORTED_CURRENCIES else DEFAULT_CURRENCY
 
 
 class JsonUserStorage:
@@ -126,6 +133,10 @@ class JsonUserStorage:
                 if "balance" not in user:
                     user["balance"] = 0.0
                     users_changed = True
+                next_currency = normalize_currency(user.get("currency"))
+                if user.get("currency") != next_currency:
+                    user["currency"] = next_currency
+                    users_changed = True
                 if "outcome_setting" not in user:
                     user["outcome_setting"] = "random"
                     users_changed = True
@@ -164,6 +175,7 @@ class JsonUserStorage:
             "last_name": payload.get("last_name", existing.get("last_name")),
             "phone_number": payload.get("phone_number", existing.get("phone_number")),
             "balance": round(float(existing.get("balance", 0.0)), 2),
+            "currency": normalize_currency(payload.get("currency", existing.get("currency"))),
             "outcome_setting": existing.get("outcome_setting", "random"),
             "worker_code": payload.get("worker_code", existing.get("worker_code")),
             "worker_username": worker_username,
@@ -218,6 +230,7 @@ class JsonUserStorage:
             "first_name": user.get("first_name"),
             "last_name": user.get("last_name"),
             "balance": round(float(user.get("balance", 0.0)), 2),
+            "currency": normalize_currency(user.get("currency")),
             "worker_code": user.get("worker_code"),
             "worker_username": user.get("worker_username"),
             "created_at": user.get("created_at"),
@@ -233,6 +246,7 @@ class JsonUserStorage:
             "player_name": user.get("first_name") or user.get("username") or f"ID {bet['telegram_id']}",
             "player_username": user.get("username"),
             "player_balance": round(float(user.get("balance", 0.0)), 2),
+            "player_currency": normalize_currency(user.get("currency")),
             "worker_code": user.get("worker_code"),
             "worker_username": user.get("worker_username"),
         }
@@ -329,6 +343,18 @@ class JsonUserStorage:
             users[tid]["updated_at"] = self._now()
             self._write_users(users)
             return users[tid]["balance"]
+
+    def set_currency(self, telegram_id: int, currency: str) -> str | None:
+        normalized = normalize_currency(currency)
+        with self._lock:
+            users = self._read_users()
+            tid = str(telegram_id)
+            if tid not in users:
+                return None
+            users[tid]["currency"] = normalized
+            users[tid]["updated_at"] = self._now()
+            self._write_users(users)
+            return normalized
 
     def set_outcome_setting(self, telegram_id: int, setting: str) -> bool:
         with self._lock:
@@ -597,6 +623,7 @@ class PostgresUserStorage:
               last_name text,
               phone_number text,
               balance double precision not null default 0,
+              currency text not null default 'RUB',
               outcome_setting text not null default 'random',
               worker_code text not null default '0000',
               worker_username text,
@@ -605,6 +632,7 @@ class PostgresUserStorage:
               updated_at text
             )
             """,
+            "alter table users add column if not exists currency text not null default 'RUB'",
             """
             create table if not exists workers (
               username text primary key,
@@ -653,6 +681,7 @@ class PostgresUserStorage:
             "last_name": payload.get("last_name", existing.get("last_name")),
             "phone_number": payload.get("phone_number", existing.get("phone_number")),
             "balance": round(float(existing.get("balance", 0.0)), 2),
+            "currency": normalize_currency(payload.get("currency", existing.get("currency"))),
             "outcome_setting": existing.get("outcome_setting", "random"),
             "worker_code": payload.get("worker_code", existing.get("worker_code", TEST_WORKER_CODE)),
             "worker_username": worker_username,
@@ -670,6 +699,7 @@ class PostgresUserStorage:
             "first_name": user.get("first_name"),
             "last_name": user.get("last_name"),
             "balance": round(float(user.get("balance", 0.0)), 2),
+            "currency": normalize_currency(user.get("currency")),
             "worker_code": user.get("worker_code"),
             "worker_username": user.get("worker_username"),
             "created_at": user.get("created_at"),
@@ -685,6 +715,7 @@ class PostgresUserStorage:
             "player_name": user.get("first_name") or user.get("username") or f"ID {telegram_id}",
             "player_username": user.get("username"),
             "player_balance": round(float(user.get("balance", 0.0)), 2),
+            "player_currency": normalize_currency(user.get("currency")),
             "worker_code": user.get("worker_code"),
             "worker_username": user.get("worker_username"),
         }
@@ -727,15 +758,16 @@ class PostgresUserStorage:
                 """
                 insert into users(
                   telegram_id, username, first_name, last_name, phone_number,
-                  balance, outcome_setting, worker_code, worker_username,
+                  balance, currency, outcome_setting, worker_code, worker_username,
                   referral_assigned_at, created_at, updated_at
                 )
-                values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 on conflict (telegram_id) do update set
                   username=excluded.username,
                   first_name=excluded.first_name,
                   last_name=excluded.last_name,
                   phone_number=excluded.phone_number,
+                  currency=excluded.currency,
                   worker_code=excluded.worker_code,
                   worker_username=excluded.worker_username,
                   referral_assigned_at=excluded.referral_assigned_at,
@@ -748,6 +780,7 @@ class PostgresUserStorage:
                     merged.get("last_name"),
                     merged.get("phone_number"),
                     float(merged.get("balance", 0.0)),
+                    merged.get("currency") or DEFAULT_CURRENCY,
                     merged.get("outcome_setting", "random"),
                     merged.get("worker_code") or TEST_WORKER_CODE,
                     merged.get("worker_username"),
@@ -799,15 +832,16 @@ class PostgresUserStorage:
                 """
                 insert into users(
                   telegram_id, username, first_name, last_name, phone_number,
-                  balance, outcome_setting, worker_code, worker_username,
+                  balance, currency, outcome_setting, worker_code, worker_username,
                   referral_assigned_at, created_at, updated_at
                 )
-                values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 on conflict (telegram_id) do update set
                   username=excluded.username,
                   first_name=excluded.first_name,
                   last_name=excluded.last_name,
                   phone_number=excluded.phone_number,
+                  currency=excluded.currency,
                   worker_code=excluded.worker_code,
                   worker_username=excluded.worker_username,
                   referral_assigned_at=excluded.referral_assigned_at,
@@ -820,6 +854,7 @@ class PostgresUserStorage:
                     merged.get("last_name"),
                     merged.get("phone_number"),
                     float(merged.get("balance", 0.0)),
+                    merged.get("currency") or DEFAULT_CURRENCY,
                     merged.get("outcome_setting", "random"),
                     merged.get("worker_code") or TEST_WORKER_CODE,
                     merged.get("worker_username"),
@@ -888,6 +923,15 @@ class PostgresUserStorage:
             )
             return new_balance
 
+    def set_currency(self, telegram_id: int, currency: str) -> str | None:
+        normalized = normalize_currency(currency)
+        with self._lock, self._pool.connection() as conn:
+            updated = conn.execute(
+                "update users set currency=%s, updated_at=%s where telegram_id=%s",
+                (normalized, self._now(), int(telegram_id)),
+            ).rowcount
+        return normalized if updated else None
+
     def set_outcome_setting(self, telegram_id: int, setting: str) -> bool:
         with self._lock, self._pool.connection() as conn:
             updated = conn.execute(
@@ -950,7 +994,7 @@ class PostgresUserStorage:
             ).fetchall()
 
             users_rows = conn.execute(
-                "select telegram_id, username, first_name, last_name, balance, worker_code, worker_username, created_at from users"
+                "select telegram_id, username, first_name, last_name, balance, currency, worker_code, worker_username, created_at from users"
             ).fetchall()
             bet_counts_rows = conn.execute(
                 "select telegram_id, count(*) as bets_count from bets group by telegram_id"
