@@ -33,6 +33,32 @@ CONTACT_BUTTON_TEXT = "Поделиться контактом"
 OPEN_APP_TEXT = "Открыть Mini App"
 WORKER_CODE_PATTERN = re.compile(r"^\d{4}$")
 AWAITING_WORKER_CODE_KEY = "awaiting_worker_code"
+WELCOME_RULES_TEXT = """🎉 Добро пожаловать, {name}
+
+Перед использованием бота, пожалуйста, ознакомьтесь с правилами и условиями сервиса.
+
+1. Пользователь самостоятельно принимает решение об использовании платформы и оценивает все возможные риски, включая финансовые, юридические и иные последствия. Все комиссии и дополнительные расходы оплачиваются пользователем самостоятельно.
+
+2. Продолжая использование бота, Вы автоматически подтверждаете согласие со всеми правилами и условиями сервиса.
+
+3. В целях безопасности аккаунт может быть временно ограничен или заблокирован при подозрении на мошеннические действия, нарушение правил или попытки обхода системы.
+
+4. Использование мультиаккаунтов строго запрещено.
+
+5. Запрещено использование любых скриптов, схем, автоматизации или иных способов получения нечестного преимущества.
+
+6. При выявлении нарушений аккаунт может быть заморожен до полного выяснения обстоятельств.
+
+7. Администрация вправе запросить документы для подтверждения личности и возраста пользователя при необходимости.
+
+📌 Для вывода средств может потребоваться прохождение верификации личности. В некоторых случаях также необходима активация платёжных сервисов в зависимости от выбранного способа вывода. Данные меры направлены на защиту пользователей и предотвращение мошенничества.
+
+📩 По вопросам пополнения, вывода средств или работы бота обращайтесь в поддержку, указанную в описании.
+
+Пожалуйста, формулируйте обращение сразу по сути вопроса — это поможет быстрее получить ответ.
+
+Спасибо за понимание и приятного пользования!
+Ваш «Bitget»"""
 
 
 async def _post_init(application: Application) -> None:
@@ -105,6 +131,24 @@ def _is_privileged_user(user, settings: Settings, storage: UserStorage) -> bool:
 
 def _has_worker_code(user_record: dict | None) -> bool:
     return bool(user_record and str(user_record.get("worker_code") or "").strip())
+
+
+def _welcome_name(user_record: dict | None, fallback_user) -> str:
+    if user_record:
+        if user_record.get("username"):
+            return f"@{user_record['username']}"
+        if user_record.get("first_name"):
+            return str(user_record["first_name"])
+    if fallback_user.username:
+        return f"@{fallback_user.username}"
+    return fallback_user.first_name or f"ID {fallback_user.id}"
+
+
+async def _send_welcome_rules_message(message, user_record: dict, fallback_user) -> None:
+    await message.reply_text(
+        WELCOME_RULES_TEXT.format(name=_welcome_name(user_record, fallback_user)),
+        reply_markup=ReplyKeyboardRemove(),
+    )
 
 
 async def _send_open_app_message(message, settings: Settings, user_record: dict | None) -> None:
@@ -295,6 +339,7 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await _ask_for_worker_code(update.message)
         return
 
+    had_phone_number = bool(user_record and user_record.get("phone_number"))
     user_record = storage.upsert_user(
         {
             "telegram_id": user.id,
@@ -306,10 +351,13 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     )
 
     context.user_data.pop(AWAITING_WORKER_CODE_KEY, None)
-    await update.message.reply_text(
-        "Контакт сохранён. Нажмите кнопку ниже, чтобы открыть Mini App.",
-        reply_markup=ReplyKeyboardRemove(),
-    )
+    if had_phone_number:
+        await update.message.reply_text(
+            "Контакт сохранён. Нажмите кнопку ниже, чтобы открыть Mini App.",
+            reply_markup=ReplyKeyboardRemove(),
+        )
+    else:
+        await _send_welcome_rules_message(update.message, user_record, user)
     await _send_open_app_message(update.message, settings, user_record)
 
 

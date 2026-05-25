@@ -2,6 +2,8 @@ const POPULAR_MARKETS = [
   { symbol: 'BTCUSDT', label: 'BTC/USDT', name: 'Bitcoin' },
   { symbol: 'ETHUSDT', label: 'ETH/USDT', name: 'Ethereum' },
   { symbol: 'SOLUSDT', label: 'SOL/USDT', name: 'Solana' },
+  { symbol: 'BNBUSDT', label: 'BNB/USDT', name: 'BNB' },
+  { symbol: 'XRPUSDT', label: 'XRP/USDT', name: 'XRP' },
 ];
 
 const DEFAULT_MARKET_SYMBOL = POPULAR_MARKETS[0].symbol;
@@ -48,6 +50,8 @@ const LANGUAGE_LABELS = {
     recentBets: 'Последние ставки',
     deposit: 'Пополнить',
     addFunds: 'Добавить средства',
+    withdraw: 'Вывод',
+    withdrawFunds: 'Вывод средств',
     settingsTitle: 'Настройки',
     settingsSubtitle: 'Управление и параметры',
     paramsTitle: 'Параметры',
@@ -174,6 +178,8 @@ const LANGUAGE_LABELS = {
     recentBets: 'Recent bets',
     deposit: 'Deposit',
     addFunds: 'Add funds',
+    withdraw: 'Withdraw',
+    withdrawFunds: 'Withdraw funds',
     settingsTitle: 'Settings',
     settingsSubtitle: 'Controls and preferences',
     paramsTitle: 'Preferences',
