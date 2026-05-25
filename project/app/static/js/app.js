@@ -6,9 +6,9 @@ const POPULAR_MARKETS = [
 
 const DEFAULT_MARKET_SYMBOL = POPULAR_MARKETS[0].symbol;
 const CURRENCY_OPTIONS = {
-  RUB: { symbol: '₽' },
-  USD: { symbol: '$' },
-  BYN: { symbol: 'Br' },
+  RUB: { symbol: '₽', rubRate: 1 },
+  USD: { symbol: '$', rubRate: 90 },
+  BYN: { symbol: 'Br', rubRate: 30 },
 };
 const DEFAULT_CURRENCY = 'RUB';
 const MARKET_STORAGE_KEY = 'cryptotrade:selectedSymbol';
@@ -396,8 +396,25 @@ function normalizeCurrency(currency) {
   return CURRENCY_OPTIONS[currency] ? currency : DEFAULT_CURRENCY;
 }
 
+function syncCurrencyRates(rates) {
+  if (!rates || typeof rates !== 'object') return;
+  Object.entries(rates).forEach(([currency, rate]) => {
+    const normalized = normalizeCurrency(currency);
+    const parsed = parseFloat(rate);
+    if (CURRENCY_OPTIONS[normalized] && Number.isFinite(parsed) && parsed > 0) {
+      CURRENCY_OPTIONS[normalized].rubRate = parsed;
+    }
+  });
+}
+
 function currencySymbol(currency = S.currency) {
   return CURRENCY_OPTIONS[normalizeCurrency(currency)].symbol;
+}
+
+function convertMoneyValue(value, fromCurrency = S.currency, toCurrency = S.currency) {
+  const source = CURRENCY_OPTIONS[normalizeCurrency(fromCurrency)].rubRate;
+  const target = CURRENCY_OPTIONS[normalizeCurrency(toCurrency)].rubRate;
+  return ((parseFloat(value) || 0) * source) / target;
 }
 
 function money(value, currency = S.currency) {
@@ -474,11 +491,13 @@ function setLanguage(language) {
 async function setAccountCurrency(currency) {
   const nextCurrency = normalizeCurrency(currency);
   const previousCurrency = S.currency;
-  S.currency = nextCurrency;
-  renderCurrencyUI();
+  if (nextCurrency === previousCurrency) return;
+  if (el('currency-select')) el('currency-select').disabled = true;
   try {
     const result = await api('POST', '/api/me/currency', { currency: nextCurrency });
+    syncCurrencyRates(result.currency_rates);
     S.currency = normalizeCurrency(result.currency);
+    S.balance = Number.isFinite(Number(result.balance)) ? Number(result.balance) : S.balance;
     if (S.user) S.user.currency = S.currency;
     renderCurrencyUI();
     S.tg?.HapticFeedback?.selectionChanged();
@@ -486,6 +505,8 @@ async function setAccountCurrency(currency) {
     S.currency = previousCurrency;
     renderCurrencyUI();
     showMessage(error.message);
+  } finally {
+    if (el('currency-select')) el('currency-select').disabled = false;
   }
 }
 
@@ -608,6 +629,7 @@ async function init() {
     const me = await api('GET', '/api/me');
     S.user = me;
     S.balance = me.balance ?? 0;
+    syncCurrencyRates(me.currency_rates);
     S.currency = normalizeCurrency(me.currency);
     renderCurrencyUI();
     S.activeBet = me.active_bet || null;
@@ -1210,8 +1232,10 @@ function renderStatsPage() {
     const resolved = S.bets.filter(bet => bet.status === 'resolved');
     const wins = resolved.filter(bet => bet.outcome === 'win');
     const losses = resolved.filter(bet => bet.outcome === 'lose');
-    const netProfit = wins.reduce((sum, bet) => sum + (bet.payout - bet.amount), 0) - losses.reduce((sum, bet) => sum + bet.amount, 0);
-    const invested = resolved.reduce((sum, bet) => sum + bet.amount, 0);
+    const convertedAmount = bet => convertMoneyValue(bet.amount, bet.currency || S.currency, S.currency);
+    const convertedPayout = bet => convertMoneyValue(bet.payout || 0, bet.currency || S.currency, S.currency);
+    const netProfit = wins.reduce((sum, bet) => sum + (convertedPayout(bet) - convertedAmount(bet)), 0) - losses.reduce((sum, bet) => sum + convertedAmount(bet), 0);
+    const invested = resolved.reduce((sum, bet) => sum + convertedAmount(bet), 0);
     const roi = invested ? ((netProfit / invested) * 100).toFixed(1) : '0';
     const winRate = resolved.length ? Math.round((wins.length / resolved.length) * 100) : 0;
     const profitClass = netProfit >= 0 ? 'green' : 'red';
@@ -1227,14 +1251,14 @@ function renderStatsPage() {
     }
     if (el('m-roi')) el('m-roi').querySelector('.metric-val').textContent = roi + '%';
     if (el('m-winrate')) el('m-winrate').querySelector('.metric-val').textContent = winRate + '%';
-    if (el('m-draws')) el('m-draws').querySelector('.metric-val').textContent = moneyFixed(losses.reduce((sum, bet) => sum + bet.amount, 0));
+    if (el('m-draws')) el('m-draws').querySelector('.metric-val').textContent = moneyFixed(losses.reduce((sum, bet) => sum + convertedAmount(bet), 0));
     if (el('stats-total')) el('stats-total').textContent = String(S.bets.length);
     if (el('stats-wins')) el('stats-wins').textContent = String(wins.length);
 
-    const bestWin = [...wins].sort((a, b) => b.payout - a.payout)[0];
+    const bestWin = [...wins].sort((a, b) => convertedPayout(b) - convertedPayout(a))[0];
     if (el('stats-summary')) {
       el('stats-summary').textContent = bestWin
-        ? t('bestBet', moneyFixed(bestWin.payout, bestWin.currency || S.currency), fmtSymbol(bestWin.symbol))
+        ? t('bestBet', moneyFixed(convertedPayout(bestWin)), fmtSymbol(bestWin.symbol))
         : t('bestBetEmpty');
     }
 

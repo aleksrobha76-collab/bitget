@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import random
 import threading
 import time
@@ -18,6 +19,21 @@ DEFAULT_CURRENCY = "RUB"
 SUPPORTED_CURRENCIES = frozenset({"RUB", "USD", "BYN"})
 
 
+def _currency_rate_from_env(name: str, default: float) -> float:
+    try:
+        value = float(os.getenv(name, "").replace(",", "."))
+    except ValueError:
+        return default
+    return value if value > 0 else default
+
+
+CURRENCY_RUB_RATES = {
+    "RUB": 1.0,
+    "USD": _currency_rate_from_env("CURRENCY_USD_RUB_RATE", 90.0),
+    "BYN": _currency_rate_from_env("CURRENCY_BYN_RUB_RATE", 30.0),
+}
+
+
 def normalize_username(value: object) -> str | None:
     if not isinstance(value, str):
         return None
@@ -29,6 +45,13 @@ def normalize_username(value: object) -> str | None:
 def normalize_currency(value: object) -> str:
     normalized = str(value or "").strip().upper()
     return normalized if normalized in SUPPORTED_CURRENCIES else DEFAULT_CURRENCY
+
+
+def convert_currency_amount(amount: float, from_currency: str, to_currency: str) -> float:
+    source = normalize_currency(from_currency)
+    target = normalize_currency(to_currency)
+    amount_in_rub = float(amount) * CURRENCY_RUB_RATES[source]
+    return round(amount_in_rub / CURRENCY_RUB_RATES[target], 2)
 
 
 class JsonUserStorage:
@@ -111,8 +134,10 @@ class JsonUserStorage:
         with self._lock:
             users = self._read_users()
             workers = self._read_workers()
+            bets = self._read_bets()
             users_changed = False
             workers_changed = False
+            bets_changed = False
 
             for worker in workers.values():
                 username = normalize_username(worker.get("username"))
@@ -156,10 +181,18 @@ class JsonUserStorage:
                     user["worker_username"] = normalized_worker_username
                     users_changed = True
 
+            for bet in bets:
+                next_currency = normalize_currency(bet.get("currency"))
+                if bet.get("currency") != next_currency:
+                    bet["currency"] = next_currency
+                    bets_changed = True
+
             if workers_changed:
                 self._write_workers(workers)
             if users_changed:
                 self._write_users(users)
+            if bets_changed:
+                self._write_bets(bets)
 
     def _build_user_record(
         self, existing: dict[str, Any], payload: dict[str, Any], now: str
@@ -243,6 +276,7 @@ class JsonUserStorage:
         user = users.get(str(bet["telegram_id"]), {})
         return {
             **bet,
+            "currency": normalize_currency(bet.get("currency", user.get("currency"))),
             "player_name": user.get("first_name") or user.get("username") or f"ID {bet['telegram_id']}",
             "player_username": user.get("username"),
             "player_balance": round(float(user.get("balance", 0.0)), 2),
@@ -344,17 +378,34 @@ class JsonUserStorage:
             self._write_users(users)
             return users[tid]["balance"]
 
-    def set_currency(self, telegram_id: int, currency: str) -> str | None:
+    def set_currency(self, telegram_id: int, currency: str) -> dict[str, Any] | None:
         normalized = normalize_currency(currency)
         with self._lock:
             users = self._read_users()
+            bets = self._read_bets()
             tid = str(telegram_id)
             if tid not in users:
                 return None
+            if any(
+                int(bet["telegram_id"]) == int(telegram_id) and bet["status"] == "pending"
+                for bet in bets
+            ):
+                raise ValueError("Нельзя менять валюту, пока активна ставка.")
+            previous_currency = normalize_currency(users[tid].get("currency"))
+            previous_balance = round(float(users[tid].get("balance", 0.0)), 2)
+            next_balance = convert_currency_amount(
+                previous_balance, previous_currency, normalized
+            )
+            users[tid]["balance"] = next_balance
             users[tid]["currency"] = normalized
             users[tid]["updated_at"] = self._now()
             self._write_users(users)
-            return normalized
+            return {
+                "currency": normalized,
+                "balance": next_balance,
+                "previous_currency": previous_currency,
+                "previous_balance": previous_balance,
+            }
 
     def set_outcome_setting(self, telegram_id: int, setting: str) -> bool:
         with self._lock:
@@ -496,6 +547,7 @@ class JsonUserStorage:
                 "telegram_id": telegram_id,
                 "symbol": symbol,
                 "amount": amount,
+                "currency": normalize_currency(users[tid].get("currency")),
                 "direction": direction,
                 "entry_price": entry_price,
                 "created_at": now_ts,
@@ -647,6 +699,7 @@ class PostgresUserStorage:
               telegram_id bigint not null references users(telegram_id) on delete cascade,
               symbol text not null,
               amount double precision not null,
+              currency text not null default 'RUB',
               direction text not null,
               entry_price double precision not null,
               created_at double precision not null,
@@ -658,6 +711,7 @@ class PostgresUserStorage:
               resolved_at double precision
             )
             """,
+            "alter table bets add column if not exists currency text not null default 'RUB'",
             "create index if not exists idx_bets_telegram_id on bets(telegram_id)",
             "create index if not exists idx_bets_status_resolve on bets(status, resolve_at)",
             "create index if not exists idx_users_worker_code on users(worker_code)",
@@ -711,6 +765,7 @@ class PostgresUserStorage:
         telegram_id = int(bet["telegram_id"])
         return {
             **bet,
+            "currency": normalize_currency(bet.get("currency", user.get("currency"))),
             "telegram_id": telegram_id,
             "player_name": user.get("first_name") or user.get("username") or f"ID {telegram_id}",
             "player_username": user.get("username"),
@@ -923,14 +978,36 @@ class PostgresUserStorage:
             )
             return new_balance
 
-    def set_currency(self, telegram_id: int, currency: str) -> str | None:
+    def set_currency(self, telegram_id: int, currency: str) -> dict[str, Any] | None:
         normalized = normalize_currency(currency)
         with self._lock, self._pool.connection() as conn:
-            updated = conn.execute(
-                "update users set currency=%s, updated_at=%s where telegram_id=%s",
-                (normalized, self._now(), int(telegram_id)),
-            ).rowcount
-        return normalized if updated else None
+            user = conn.execute(
+                "select balance, currency from users where telegram_id=%s",
+                (int(telegram_id),),
+            ).fetchone()
+            if user is None:
+                return None
+            active = conn.execute(
+                "select 1 from bets where telegram_id=%s and status='pending' limit 1",
+                (int(telegram_id),),
+            ).fetchone()
+            if active is not None:
+                raise ValueError("Нельзя менять валюту, пока активна ставка.")
+            previous_currency = normalize_currency(user.get("currency"))
+            previous_balance = round(float(user.get("balance") or 0.0), 2)
+            next_balance = convert_currency_amount(
+                previous_balance, previous_currency, normalized
+            )
+            conn.execute(
+                "update users set balance=%s, currency=%s, updated_at=%s where telegram_id=%s",
+                (float(next_balance), normalized, self._now(), int(telegram_id)),
+            )
+        return {
+            "currency": normalized,
+            "balance": next_balance,
+            "previous_currency": previous_currency,
+            "previous_balance": previous_balance,
+        }
 
     def set_outcome_setting(self, telegram_id: int, setting: str) -> bool:
         with self._lock, self._pool.connection() as conn:
@@ -1055,7 +1132,7 @@ class PostgresUserStorage:
         amount = float(amount)
         with self._lock, self._pool.connection() as conn:
             user = conn.execute(
-                "select balance from users where telegram_id=%s",
+                "select balance, currency from users where telegram_id=%s",
                 (telegram_id,),
             ).fetchone()
             if user is None:
@@ -1084,6 +1161,7 @@ class PostgresUserStorage:
                 "telegram_id": telegram_id,
                 "symbol": symbol,
                 "amount": amount,
+                "currency": normalize_currency(user.get("currency")),
                 "direction": direction,
                 "entry_price": float(entry_price),
                 "created_at": now_ts,
@@ -1096,15 +1174,16 @@ class PostgresUserStorage:
             conn.execute(
                 """
                 insert into bets(
-                  id, telegram_id, symbol, amount, direction, entry_price,
+                  id, telegram_id, symbol, amount, currency, direction, entry_price,
                   created_at, resolve_at, status, outcome, exit_price, payout, resolved_at
-                ) values (%s::uuid,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                ) values (%s::uuid,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """,
                 (
                     bet_id,
                     telegram_id,
                     bet["symbol"],
                     float(bet["amount"]),
+                    bet["currency"],
                     bet["direction"],
                     float(bet["entry_price"]),
                     float(bet["created_at"]),

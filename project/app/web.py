@@ -24,7 +24,13 @@ from .market_data import (
     get_klines as fetch_klines,
     get_ticker24h as fetch_ticker24h,
 )
-from .storage import SUPPORTED_CURRENCIES, UserStorage, normalize_currency, normalize_username
+from .storage import (
+    CURRENCY_RUB_RATES,
+    SUPPORTED_CURRENCIES,
+    UserStorage,
+    normalize_currency,
+    normalize_username,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -175,6 +181,7 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
             "first_name": user.get("first_name"),
             "balance": user.get("balance", 0.0),
             "currency": user.get("currency", "RUB"),
+            "currency_rates": CURRENCY_RUB_RATES,
             "active_bet": active,
             "worker_code": user.get("worker_code"),
             "worker_username": user.get("worker_username"),
@@ -209,7 +216,10 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
         if requested_currency not in SUPPORTED_CURRENCIES:
             raise HTTPException(400, "currency must be RUB, USD, or BYN")
         currency = normalize_currency(requested_currency)
-        saved = storage.set_currency(tg_user.telegram_id, currency)
+        try:
+            saved = storage.set_currency(tg_user.telegram_id, currency)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
         if saved is None:
             storage.upsert_user(
                 {
@@ -220,8 +230,18 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
                     "currency": currency,
                 }
             )
-            saved = currency
-        return {"ok": True, "currency": saved, "server_time": current_server_time()}
+            saved = {
+                "currency": currency,
+                "balance": 0.0,
+                "previous_currency": currency,
+                "previous_balance": 0.0,
+            }
+        return {
+            "ok": True,
+            **saved,
+            "currency_rates": CURRENCY_RUB_RATES,
+            "server_time": current_server_time(),
+        }
 
     @app.post("/api/bet")
     async def place_bet(request: Request, body: BetRequest) -> dict:
