@@ -11,6 +11,7 @@ const DEFAULT_LANGUAGE = 'ru';
 const LANGUAGE_LABELS = {
   ru: {
     documentLang: 'ru',
+<<<<<<< HEAD
     locale: 'ru-RU',
     selectAria: 'Выбор языка',
     languageRussian: 'Русский',
@@ -42,6 +43,9 @@ const LANGUAGE_LABELS = {
     recentBets: 'Последние ставки',
     deposit: 'Пополнить',
     addFunds: 'Добавить средства',
+=======
+    selectAria: 'Выбор языка',
+>>>>>>> origin/main
     settingsTitle: 'Настройки',
     settingsSubtitle: 'Управление и параметры',
     paramsTitle: 'Параметры',
@@ -50,6 +54,7 @@ const LANGUAGE_LABELS = {
     appPanelSubtitle: 'Авторизация через Telegram',
     symbol: 'Символ',
     language: 'Язык',
+<<<<<<< HEAD
     adminPanel: 'Панель администратора',
     loadingAccess: 'Загрузка прав доступа...',
     players: 'Игроки',
@@ -163,6 +168,12 @@ const LANGUAGE_LABELS = {
     recentBets: 'Recent bets',
     deposit: 'Deposit',
     addFunds: 'Add funds',
+=======
+  },
+  en: {
+    documentLang: 'en',
+    selectAria: 'Language selection',
+>>>>>>> origin/main
     settingsTitle: 'Settings',
     settingsSubtitle: 'Controls and preferences',
     paramsTitle: 'Preferences',
@@ -171,6 +182,7 @@ const LANGUAGE_LABELS = {
     appPanelSubtitle: 'Telegram authorization',
     symbol: 'Symbol',
     language: 'Language',
+<<<<<<< HEAD
     adminPanel: 'Admin panel',
     loadingAccess: 'Loading access...',
     players: 'Players',
@@ -250,6 +262,8 @@ const LANGUAGE_LABELS = {
     betsCount: count => `${count} bets`,
     noClients: 'No clients yet',
     codeClients: (code, count) => `Code ${code} • Clients ${count}`,
+=======
+>>>>>>> origin/main
   },
 };
 
@@ -364,6 +378,7 @@ function setText(id, value) {
   if (node) node.textContent = value;
 }
 
+<<<<<<< HEAD
 function t(key, ...args) {
   const labels = LANGUAGE_LABELS[S.language] || LANGUAGE_LABELS[DEFAULT_LANGUAGE];
   const fallback = LANGUAGE_LABELS[DEFAULT_LANGUAGE] || {};
@@ -387,6 +402,8 @@ function applyStaticTranslations() {
   });
 }
 
+=======
+>>>>>>> origin/main
 function renderLanguageUI() {
   const labels = LANGUAGE_LABELS[S.language] || LANGUAGE_LABELS[DEFAULT_LANGUAGE];
   document.documentElement.lang = labels.documentLang;
@@ -395,6 +412,7 @@ function renderLanguageUI() {
     select.value = S.language;
     select.setAttribute('aria-label', labels.selectAria);
   }
+<<<<<<< HEAD
   applyStaticTranslations();
   renderBetButtonLabels();
   renderPairUI();
@@ -410,6 +428,16 @@ function renderLanguageUI() {
     if (S.admin.bets.length) renderAdminBets();
     if (S.admin.workers.length) renderAdminWorkers();
   }
+=======
+  setText('settings-title', labels.settingsTitle);
+  setText('settings-subtitle', labels.settingsSubtitle);
+  setText('settings-params-title', labels.paramsTitle);
+  setText('settings-params-subtitle', labels.paramsSubtitle);
+  setText('settings-app-title', labels.appPanelTitle);
+  setText('settings-app-subtitle', labels.appPanelSubtitle);
+  setText('set-symbol-label', labels.symbol);
+  setText('set-language-label', labels.language);
+>>>>>>> origin/main
 }
 
 function setLanguage(language) {
