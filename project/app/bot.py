@@ -262,8 +262,7 @@ async def handle_worker_code(
         return
 
     context.user_data.pop(AWAITING_WORKER_CODE_KEY, None)
-    worker_label = "тестовый код" if text == TEST_WORKER_CODE else f"код @{worker['username']}"
-    await message.reply_text(f"Сохранил {worker_label}.")
+    await message.reply_text("Код сохранён.")
     await _continue_after_referral(
         update, context, user_record, privileged=False
     )

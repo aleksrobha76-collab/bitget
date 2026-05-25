@@ -6,6 +6,34 @@ const POPULAR_MARKETS = [
 
 const DEFAULT_MARKET_SYMBOL = POPULAR_MARKETS[0].symbol;
 const MARKET_STORAGE_KEY = 'cryptotrade:selectedSymbol';
+const LANGUAGE_STORAGE_KEY = 'cryptotrade:language';
+const DEFAULT_LANGUAGE = 'ru';
+const LANGUAGE_LABELS = {
+  ru: {
+    documentLang: 'ru',
+    selectAria: 'Выбор языка',
+    settingsTitle: 'Настройки',
+    settingsSubtitle: 'Управление и параметры',
+    paramsTitle: 'Параметры',
+    paramsSubtitle: 'Уведомления, безопасность и интерфейс',
+    appPanelTitle: 'Telegram Mini App',
+    appPanelSubtitle: 'Авторизация через Telegram',
+    symbol: 'Символ',
+    language: 'Язык',
+  },
+  en: {
+    documentLang: 'en',
+    selectAria: 'Language selection',
+    settingsTitle: 'Settings',
+    settingsSubtitle: 'Controls and preferences',
+    paramsTitle: 'Preferences',
+    paramsSubtitle: 'Notifications, security, and interface',
+    appPanelTitle: 'Telegram Mini App',
+    appPanelSubtitle: 'Telegram authorization',
+    symbol: 'Symbol',
+    language: 'Language',
+  },
+};
 
 const S = {
   tg: window.Telegram?.WebApp,
@@ -36,6 +64,7 @@ const S = {
     selectedSymbol: DEFAULT_MARKET_SYMBOL,
     menuOpen: false,
   },
+  language: DEFAULT_LANGUAGE,
   modal: {
     direction: 'up',
     keyboardOpen: false,
@@ -95,6 +124,51 @@ function saveMarketSymbol(symbol) {
   try {
     window.localStorage?.setItem(MARKET_STORAGE_KEY, symbol);
   } catch (_) {}
+}
+
+function getSavedLanguage() {
+  try {
+    const saved = window.localStorage?.getItem(LANGUAGE_STORAGE_KEY);
+    return LANGUAGE_LABELS[saved] ? saved : DEFAULT_LANGUAGE;
+  } catch (_) {
+    return DEFAULT_LANGUAGE;
+  }
+}
+
+function saveLanguage(language) {
+  try {
+    window.localStorage?.setItem(LANGUAGE_STORAGE_KEY, language);
+  } catch (_) {}
+}
+
+function setText(id, value) {
+  const node = el(id);
+  if (node) node.textContent = value;
+}
+
+function renderLanguageUI() {
+  const labels = LANGUAGE_LABELS[S.language] || LANGUAGE_LABELS[DEFAULT_LANGUAGE];
+  document.documentElement.lang = labels.documentLang;
+  const select = el('language-select');
+  if (select) {
+    select.value = S.language;
+    select.setAttribute('aria-label', labels.selectAria);
+  }
+  setText('settings-title', labels.settingsTitle);
+  setText('settings-subtitle', labels.settingsSubtitle);
+  setText('settings-params-title', labels.paramsTitle);
+  setText('settings-params-subtitle', labels.paramsSubtitle);
+  setText('settings-app-title', labels.appPanelTitle);
+  setText('settings-app-subtitle', labels.appPanelSubtitle);
+  setText('set-symbol-label', labels.symbol);
+  setText('set-language-label', labels.language);
+}
+
+function setLanguage(language) {
+  if (!LANGUAGE_LABELS[language]) return;
+  S.language = language;
+  saveLanguage(language);
+  renderLanguageUI();
 }
 
 function getMarketOption(symbol = S.market.selectedSymbol) {
@@ -192,6 +266,8 @@ async function init() {
     S.initData = S.tg.initData || '';
   }
 
+  S.language = getSavedLanguage();
+  renderLanguageUI();
   S.market.selectedSymbol = getSavedMarketSymbol();
   renderPairUI();
 
@@ -225,6 +301,11 @@ document.querySelectorAll('.nav-tab').forEach(button => {
 el('pair-chip')?.addEventListener('click', event => {
   event.stopPropagation();
   togglePairMenu();
+});
+
+el('language-select')?.addEventListener('change', event => {
+  setLanguage(event.target.value);
+  S.tg?.HapticFeedback?.selectionChanged();
 });
 
 document.addEventListener('click', event => {
