@@ -1422,6 +1422,7 @@ function renderAdminUsers() {
   const list = el('admin-users-list');
   if (!list) return;
   const isOwner = S.admin.profile?.role === 'owner';
+  const canEditOutcome = isOwner || S.admin.profile?.role === 'worker';
   if (!S.admin.users.length) {
     list.innerHTML = `<div class="empty-state">${isOwner ? t('noPlayers') : t('noClientsList')}</div>`;
     return;
@@ -1433,8 +1434,8 @@ function renderAdminUsers() {
     const meta = [user.username ? '@' + user.username : null, 'ID ' + telegramId].filter(Boolean).join(' • ');
     const setting = user.outcome_setting || 'random';
     const userCurrency = normalizeCurrency(user.currency);
-    const rightMeta = isOwner ? formatOutcome(setting) : t('betsCount', user.bets_count || 0);
-    const outcomeControls = isOwner ? `
+    const rightMeta = canEditOutcome ? formatOutcome(setting) : t('betsCount', user.bets_count || 0);
+    const outcomeControls = canEditOutcome ? `
         <div class="auc-ctrl-lbl">${t('outcomeSetting')}</div>
         <div class="outcome-btns">
           <button class="outcome-btn win ${setting === 'win' ? 'active' : ''}" onclick="setOutcome(${telegramId}, 'win')">${t('win')}</button>

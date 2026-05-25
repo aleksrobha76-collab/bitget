@@ -380,11 +380,17 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
     async def admin_set_outcome(request: Request, body: OutcomeRequest) -> dict:
         init_data = request.headers.get("X-Telegram-Init-Data", "")
         try:
-            ensure_owner(init_data, settings)
+            admin = ensure_admin_access(init_data, settings, storage)
         except AdminAccessError as exc:
             raise HTTPException(403, str(exc)) from exc
         if body.setting not in ("win", "lose", "random"):
             raise HTTPException(400, "setting must be win, lose, or random")
+        user = storage.get_user(body.telegram_id)
+        if user is None:
+            raise HTTPException(404, "User not found")
+        if admin.role == "worker":
+            if str(user.get("worker_code") or "") != str(admin.worker_code):
+                raise HTTPException(403, "Worker can only edit own clients")
         ok = storage.set_outcome_setting(body.telegram_id, body.setting)
         if not ok:
             raise HTTPException(404, "User not found")
