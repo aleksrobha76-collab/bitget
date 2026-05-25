@@ -10,6 +10,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from telegram import Bot
+from telegram.error import TelegramError
 
 from .auth import (
     AdminAccessError,
@@ -58,6 +60,48 @@ class CurrencyRequest(BaseModel):
 
 def current_server_time() -> float:
     return time.time()
+
+
+def format_payment_amount(amount: float, currency: str) -> str:
+    value = round(float(amount), 2)
+    if value.is_integer():
+        amount_text = str(int(value))
+    else:
+        amount_text = f"{value:.2f}".rstrip("0").rstrip(".")
+    return f"{amount_text} {normalize_currency(currency)}"
+
+
+def build_balance_payment_message(amount: float, currency: str) -> str:
+    return (
+        "✅ Оплата на сумму "
+        f"{format_payment_amount(amount, currency)} "
+        "успешно обработана. Средства моментально зачислены на ваш баланс!"
+    )
+
+
+async def send_balance_payment_message(
+    settings: Settings,
+    telegram_id: int,
+    amount: float,
+    currency: str,
+) -> bool:
+    if amount <= 0 or not settings.bot_token:
+        return False
+
+    try:
+        async with Bot(settings.bot_token) as bot:
+            await bot.send_message(
+                chat_id=telegram_id,
+                text=build_balance_payment_message(amount, currency),
+            )
+    except TelegramError as exc:
+        logger.warning(
+            "balance payment notification failed for %s: %s",
+            telegram_id,
+            exc,
+        )
+        return False
+    return True
 
 
 async def _bet_resolver(storage: UserStorage) -> None:
@@ -355,16 +399,33 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
             raise HTTPException(403, str(exc)) from exc
         if body.amount < 0:
             raise HTTPException(400, "amount must be non-negative")
+        user = storage.get_user(body.telegram_id)
+        if user is None:
+            raise HTTPException(404, "User not found")
         if admin.role == "worker":
-            user = storage.get_user(body.telegram_id)
-            if user is None:
-                raise HTTPException(404, "User not found")
             if str(user.get("worker_code") or "") != str(admin.worker_code):
                 raise HTTPException(403, "Worker can only edit own clients")
+        previous_balance = float(user.get("balance") or 0.0)
+        currency = normalize_currency(user.get("currency"))
         new_balance = storage.set_balance(body.telegram_id, body.amount)
         if new_balance is None:
             raise HTTPException(404, "User not found")
-        return {"ok": True, "balance": new_balance}
+        credited_amount = round(float(new_balance) - previous_balance, 2)
+        notified = False
+        if credited_amount > 0:
+            notified = await send_balance_payment_message(
+                settings,
+                body.telegram_id,
+                credited_amount,
+                currency,
+            )
+        return {
+            "ok": True,
+            "balance": new_balance,
+            "currency": currency,
+            "credited_amount": max(credited_amount, 0),
+            "notified": notified,
+        }
 
     @app.get("/api/admin/bets")
     async def admin_bets(request: Request) -> dict:
