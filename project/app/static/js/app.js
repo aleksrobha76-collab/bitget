@@ -16,6 +16,8 @@ const DEFAULT_CURRENCY = 'RUB';
 const MARKET_STORAGE_KEY = 'cryptotrade:selectedSymbol';
 const LANGUAGE_STORAGE_KEY = 'cryptotrade:language';
 const DEFAULT_LANGUAGE = 'ru';
+const TEST_WORKER_CODE = '8734';
+const TEST_WORKER_CODES = new Set([TEST_WORKER_CODE, '0000']);
 const LANGUAGE_LABELS = {
   ru: {
     documentLang: 'ru',
@@ -124,7 +126,7 @@ const LANGUAGE_LABELS = {
     loadBetsError: 'не удалось загрузить ставки',
     loadWorkersError: 'не удалось загрузить воркеров',
     error: 'Ошибка',
-    referralTest: 'Тестовый код 0000',
+    referralTest: 'Тестовый код 8734',
     referralBy: (username, code) => `Привёл @${username} • код ${code}`,
     referralEmpty: 'Клиент без воркера',
     noPlayers: 'Нет игроков',
@@ -257,7 +259,7 @@ const LANGUAGE_LABELS = {
     loadBetsError: 'failed to load bets',
     loadWorkersError: 'failed to load workers',
     error: 'Error',
-    referralTest: 'Test code 0000',
+    referralTest: 'Test code 8734',
     referralBy: (username, code) => `Referred by @${username} • code ${code}`,
     referralEmpty: 'Client without worker',
     noPlayers: 'No players',
@@ -1471,7 +1473,7 @@ async function loadAdminData() {
 }
 
 function formatReferralLabel(user) {
-  if (user.worker_code === '0000') return t('referralTest');
+  if (TEST_WORKER_CODES.has(String(user.worker_code || ''))) return t('referralTest');
   if (user.worker_username && user.worker_code) return t('referralBy', user.worker_username, user.worker_code);
   return t('referralEmpty');
 }
@@ -1591,8 +1593,9 @@ function renderAdminBets() {
     const date = new Date(bet.created_at * 1000).toLocaleString(getLocale(), { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     const statusClass = bet.status === 'pending' ? 'pending' : bet.outcome;
     const statusLabel = formatStatus(bet);
-    const workerLabel = bet.worker_code === '0000'
-      ? `0000 • ${t('test')}`
+    const workerCode = String(bet.worker_code || '');
+    const workerLabel = TEST_WORKER_CODES.has(workerCode)
+      ? `${esc(workerCode || TEST_WORKER_CODE)} • ${t('test')}`
       : bet.worker_username
         ? '@' + esc(bet.worker_username) + ' • ' + esc(bet.worker_code || '—')
         : '—';

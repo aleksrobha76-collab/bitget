@@ -14,7 +14,9 @@ from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
 
-TEST_WORKER_CODE = "0000"
+TEST_WORKER_CODE = "8734"
+LEGACY_TEST_WORKER_CODES = frozenset({"0000"})
+TEST_WORKER_CODES = frozenset({TEST_WORKER_CODE, *LEGACY_TEST_WORKER_CODES})
 DEFAULT_CURRENCY = "RUB"
 SUPPORTED_CURRENCIES = frozenset({"RUB", "USD", "BYN"})
 
@@ -144,7 +146,7 @@ class JsonUserStorage:
                 if username and worker.get("username") != username:
                     worker["username"] = username
                     workers_changed = True
-                if worker.get("code") == TEST_WORKER_CODE:
+                if str(worker.get("code") or "") in TEST_WORKER_CODES:
                     worker["code"] = self._generate_worker_code(workers)
                     workers_changed = True
                 if not worker.get("created_at"):
@@ -228,12 +230,12 @@ class JsonUserStorage:
 
         for _ in range(200):
             code = f"{random.randint(0, 9999):04d}"
-            if code != TEST_WORKER_CODE and code not in taken:
+            if code not in TEST_WORKER_CODES and code not in taken:
                 return code
 
         for index in range(10000):
             code = f"{index:04d}"
-            if code != TEST_WORKER_CODE and code not in taken:
+            if code not in TEST_WORKER_CODES and code not in taken:
                 return code
 
         raise ValueError("Свободные 4-значные коды для воркеров закончились.")
@@ -504,7 +506,7 @@ class JsonUserStorage:
                 bets_count=bet_counts.get(int(user["telegram_id"]), 0),
             )
             for user in users.values()
-            if str(user.get("worker_code") or "") == TEST_WORKER_CODE
+            if str(user.get("worker_code") or "") in TEST_WORKER_CODES
         ]
         test_clients.sort(key=lambda item: item.get("created_at", ""), reverse=True)
         records.append(
@@ -689,7 +691,7 @@ class PostgresUserStorage:
               balance double precision not null default 0,
               currency text not null default 'RUB',
               outcome_setting text not null default 'random',
-              worker_code text not null default '0000',
+              worker_code text not null default '8734',
               worker_username text,
               referral_assigned_at text,
               created_at text,
@@ -697,6 +699,7 @@ class PostgresUserStorage:
             )
             """,
             "alter table users add column if not exists currency text not null default 'RUB'",
+            "alter table users alter column worker_code set default '8734'",
             """
             create table if not exists workers (
               username text primary key,
@@ -792,12 +795,12 @@ class PostgresUserStorage:
 
         for _ in range(200):
             code = f"{random.randint(0, 9999):04d}"
-            if code != TEST_WORKER_CODE and code not in taken:
+            if code not in TEST_WORKER_CODES and code not in taken:
                 return code
 
         for index in range(10000):
             code = f"{index:04d}"
-            if code != TEST_WORKER_CODE and code not in taken:
+            if code not in TEST_WORKER_CODES and code not in taken:
                 return code
 
         raise ValueError("Свободные 4-значные коды для воркеров закончились.")
@@ -1129,7 +1132,7 @@ class PostgresUserStorage:
                 bets_count=bet_counts.get(int(user["telegram_id"]), 0),
             )
             for user in users
-            if str(user.get("worker_code") or "") == TEST_WORKER_CODE
+            if str(user.get("worker_code") or "") in TEST_WORKER_CODES
         ]
         test_clients.sort(key=lambda item: item.get("created_at", "") or "", reverse=True)
         records.append(

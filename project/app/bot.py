@@ -299,7 +299,7 @@ async def handle_worker_code(
     if not WORKER_CODE_PATTERN.fullmatch(text):
         context.user_data[AWAITING_WORKER_CODE_KEY] = True
         await message.reply_text(
-            "Нужен именно 4-значный код. Пример: 4821 или 0000 для теста."
+            f"Нужен именно 4-значный код. Пример: 4821 или {TEST_WORKER_CODE} для теста."
         )
         return
 
