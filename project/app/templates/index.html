@@ -103,9 +103,7 @@
 
       <div id="page-stats" class="page">
         <div class="header-card">
-          <div class="hc-avatar" style="background:#4DD5FF;">
-            <div class="hc-avatar-dot" style="background:#071018;"></div>
-          </div>
+          <div class="hc-avatar hc-avatar-logo" aria-hidden="true"></div>
           <div class="hc-info">
             <div class="hc-name" id="stats-hc-name">@user</div>
             <div class="hc-sub" data-i18n="analytics">Аналитика</div>
@@ -155,9 +153,7 @@
 
       <div id="page-profile" class="page">
         <div class="header-card">
-          <div class="hc-avatar" style="background:#79A7FF;">
-            <div class="hc-avatar-dot" style="background:#0B1020;"></div>
-          </div>
+          <div class="hc-avatar hc-avatar-logo" aria-hidden="true"></div>
           <div class="hc-info">
             <div class="hc-name" id="pr-name">Пользователь</div>
             <div class="hc-sub" data-i18n="verifiedTrader">Верифицированный трейдер</div>
@@ -200,10 +196,10 @@
             <div class="fc-cap" data-i18n="deposit">Пополнить</div>
             <div class="fc-val" data-i18n="addFunds">Добавить средства</div>
           </a>
-          <a class="footer-card support-link" href="https://t.me/bitget_help_center" target="_blank" rel="noopener">
+          <button class="footer-card support-link" id="open-withdraw-btn" type="button">
             <div class="fc-cap" data-i18n="withdraw">Вывод</div>
             <div class="fc-val" data-i18n="withdrawFunds">Вывод средств</div>
-          </a>
+          </button>
         </div>
         <div class="footer-row">
           <div class="footer-card win-card">
@@ -215,9 +211,7 @@
 
       <div id="page-settings" class="page">
         <div class="header-card">
-          <div class="hc-avatar" style="background:#8FA2C1;">
-            <div class="hc-avatar-dot" style="background:#0F1520;top:13px;left:13px;"></div>
-          </div>
+          <div class="hc-avatar hc-avatar-logo" aria-hidden="true"></div>
           <div class="hc-info">
             <div class="hc-name" id="settings-title" data-i18n="settingsTitle">Настройки</div>
             <div class="hc-sub" id="settings-subtitle" data-i18n="settingsSubtitle">Управление и параметры</div>
@@ -319,7 +313,7 @@
     </nav>
   </div>
 
-  <div id="modal-overlay" class="modal-overlay" onclick="closeBetModal()" aria-hidden="true"></div>
+  <div id="modal-overlay" class="modal-overlay" onclick="closeAllModals()" aria-hidden="true"></div>
 
   <div id="bet-modal" class="bet-modal" role="dialog" aria-modal="true" aria-hidden="true"
     aria-labelledby="bm-dir-title">
@@ -357,6 +351,19 @@
 
     <button id="bet-confirm-btn" class="bm-confirm up" disabled>
       Поставить ₽500 на РОСТ
+    </button>
+  </div>
+
+  <div id="withdraw-modal" class="withdraw-modal" role="dialog" aria-modal="true" aria-hidden="true"
+    aria-labelledby="withdraw-title">
+    <div class="bm-handle"></div>
+    <div class="withdraw-icon">↗</div>
+    <div id="withdraw-title" class="withdraw-title" data-i18n="withdrawRequestTitle">Запрос на возврат средств</div>
+    <div class="withdraw-text" data-i18n="withdrawRequestText">
+      Отправить запрос на возврат средств, средства придут в течение 2х часов.
+    </div>
+    <button id="withdraw-confirm-btn" class="withdraw-confirm" type="button" data-i18n="withdrawRequestButton">
+      Отправить запрос
     </button>
   </div>
 

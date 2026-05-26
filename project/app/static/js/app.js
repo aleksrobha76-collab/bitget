@@ -52,6 +52,11 @@ const LANGUAGE_LABELS = {
     addFunds: 'Добавить средства',
     withdraw: 'Вывод',
     withdrawFunds: 'Вывод средств',
+    withdrawRequestTitle: 'Запрос на возврат средств',
+    withdrawRequestText: 'Отправить запрос на возврат средств, средства придут в течение 2х часов.',
+    withdrawRequestButton: 'Отправить запрос',
+    withdrawRequestSent: 'Запрос отправлен',
+    withdrawRequestError: 'Не удалось отправить запрос',
     settingsTitle: 'Настройки',
     settingsSubtitle: 'Управление и параметры',
     paramsTitle: 'Параметры',
@@ -180,6 +185,11 @@ const LANGUAGE_LABELS = {
     addFunds: 'Add funds',
     withdraw: 'Withdraw',
     withdrawFunds: 'Withdraw funds',
+    withdrawRequestTitle: 'Refund request',
+    withdrawRequestText: 'Send a refund request. Funds will arrive within 2 hours.',
+    withdrawRequestButton: 'Send request',
+    withdrawRequestSent: 'Request sent',
+    withdrawRequestError: 'Failed to send request',
     settingsTitle: 'Settings',
     settingsSubtitle: 'Controls and preferences',
     paramsTitle: 'Preferences',
@@ -350,6 +360,14 @@ function nowServerMs() {
 
 function showMessage(message) {
   S.tg?.showAlert?.(message) || alert(message);
+}
+
+function syncAppHeight() {
+  const tgHeight = Number(S.tg?.viewportStableHeight || S.tg?.viewportHeight || 0);
+  const visualHeight = Number(window.visualViewport?.height || 0);
+  const fallbackHeight = Number(window.innerHeight || document.documentElement.clientHeight || 0);
+  const height = Math.max(320, tgHeight || visualHeight || fallbackHeight);
+  document.documentElement.style.setProperty('--app-height', `${height}px`);
 }
 
 function getSavedMarketSymbol() {
@@ -618,12 +636,14 @@ function selectMarket(symbol, options = {}) {
 }
 
 async function init() {
+  syncAppHeight();
   if (S.tg) {
     S.tg.ready();
     S.tg.expand();
     S.tg.setHeaderColor?.('#050507');
     S.tg.setBackgroundColor?.('#050507');
     S.initData = S.tg.initData || '';
+    S.tg.onEvent?.('viewportChanged', syncAppHeight);
   }
 
   S.language = getSavedLanguage();
@@ -957,6 +977,8 @@ function renderPresetAmounts() {
 el('open-up-btn')?.addEventListener('click', () => openBetModal('up'));
 el('open-down-btn')?.addEventListener('click', () => openBetModal('down'));
 el('bet-confirm-btn')?.addEventListener('click', () => placeBet(S.modal.direction));
+el('open-withdraw-btn')?.addEventListener('click', openWithdrawModal);
+el('withdraw-confirm-btn')?.addEventListener('click', requestWithdrawal);
 el('bet-amount')?.addEventListener('input', () => {
   document.querySelectorAll('.bm-preset').forEach(button => button.classList.remove('active'));
   updateConfirmButton();
@@ -988,11 +1010,13 @@ document.querySelectorAll('.bm-dur').forEach(button => {
 });
 
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape') closeBetModal();
+  if (event.key === 'Escape') closeAllModals();
 });
 
 window.visualViewport?.addEventListener('resize', syncModalViewport);
 window.visualViewport?.addEventListener('scroll', syncModalViewport);
+window.visualViewport?.addEventListener('resize', syncAppHeight);
+window.addEventListener('resize', syncAppHeight);
 
 function openBetModal(direction) {
   if (S.activeBet) return;
@@ -1023,6 +1047,40 @@ function closeBetModal() {
   el('modal-overlay')?.setAttribute('aria-hidden', 'true');
   S.modal.keyboardOpen = false;
   syncModalViewport();
+}
+
+function openWithdrawModal() {
+  closeBetModal();
+  el('withdraw-modal')?.classList.add('open');
+  el('withdraw-modal')?.setAttribute('aria-hidden', 'false');
+  el('modal-overlay')?.classList.add('show');
+  el('modal-overlay')?.setAttribute('aria-hidden', 'false');
+}
+
+function closeWithdrawModal() {
+  el('withdraw-modal')?.classList.remove('open');
+  el('withdraw-modal')?.setAttribute('aria-hidden', 'true');
+  el('modal-overlay')?.classList.remove('show');
+  el('modal-overlay')?.setAttribute('aria-hidden', 'true');
+}
+
+function closeAllModals() {
+  closeBetModal();
+  closeWithdrawModal();
+}
+
+async function requestWithdrawal() {
+  const button = el('withdraw-confirm-btn');
+  if (button) button.disabled = true;
+  try {
+    await api('POST', '/api/withdraw', {});
+    closeWithdrawModal();
+    showMessage(t('withdrawRequestSent'));
+  } catch (error) {
+    showMessage(error.message || t('withdrawRequestError'));
+  } finally {
+    if (button) button.disabled = false;
+  }
 }
 
 function updateModalHeader() {

