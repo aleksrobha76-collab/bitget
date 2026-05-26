@@ -1372,7 +1372,7 @@ function renderProfilePage() {
       return;
     }
 
-    activity.innerHTML = S.bets.slice(0, 3).map(bet => {
+    activity.innerHTML = S.bets.slice(0, 15).map(bet => {
       const direction = formatDirection(bet.direction, true);
       const status = formatStatus(bet);
       return `<div class="act-item">${fmtSymbol(bet.symbol)} ${direction} — ${moneyFixed(bet.amount, bet.currency || S.currency)} — ${status}</div>`;
