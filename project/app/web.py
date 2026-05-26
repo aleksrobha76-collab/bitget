@@ -403,28 +403,25 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
             admin = ensure_admin_access(init_data, settings, storage)
         except AdminAccessError as exc:
             raise HTTPException(403, str(exc)) from exc
-        if body.amount < 0:
-            raise HTTPException(400, "amount must be non-negative")
+        if body.amount <= 0:
+            raise HTTPException(400, "amount must be positive")
         user = storage.get_user(body.telegram_id)
         if user is None:
             raise HTTPException(404, "User not found")
         if admin.role == "worker":
             if str(user.get("worker_code") or "") != str(admin.worker_code):
                 raise HTTPException(403, "Worker can only edit own clients")
-        previous_balance = float(user.get("balance") or 0.0)
         currency = normalize_currency(user.get("currency"))
-        new_balance = storage.set_balance(body.telegram_id, body.amount)
+        credited_amount = round(float(body.amount), 2)
+        new_balance = storage.add_balance(body.telegram_id, credited_amount)
         if new_balance is None:
             raise HTTPException(404, "User not found")
-        credited_amount = round(float(new_balance) - previous_balance, 2)
-        notified = False
-        if credited_amount > 0:
-            notified = await send_balance_payment_message(
-                settings,
-                body.telegram_id,
-                credited_amount,
-                currency,
-            )
+        notified = await send_balance_payment_message(
+            settings,
+            body.telegram_id,
+            credited_amount,
+            currency,
+        )
         return {
             "ok": True,
             "balance": new_balance,

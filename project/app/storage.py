@@ -378,6 +378,18 @@ class JsonUserStorage:
             self._write_users(users)
             return users[tid]["balance"]
 
+    def add_balance(self, telegram_id: int, amount: float) -> float | None:
+        with self._lock:
+            users = self._read_users()
+            tid = str(telegram_id)
+            if tid not in users:
+                return None
+            current_balance = round(float(users[tid].get("balance", 0.0)), 2)
+            users[tid]["balance"] = round(current_balance + float(amount), 2)
+            users[tid]["updated_at"] = self._now()
+            self._write_users(users)
+            return users[tid]["balance"]
+
     def set_currency(self, telegram_id: int, currency: str) -> dict[str, Any] | None:
         normalized = normalize_currency(currency)
         with self._lock:
@@ -972,6 +984,22 @@ class PostgresUserStorage:
             if row is None:
                 return None
             new_balance = round(float(amount), 2)
+            conn.execute(
+                "update users set balance=%s, updated_at=%s where telegram_id=%s",
+                (float(new_balance), self._now(), int(telegram_id)),
+            )
+            return new_balance
+
+    def add_balance(self, telegram_id: int, amount: float) -> float | None:
+        with self._lock, self._pool.connection() as conn:
+            row = conn.execute(
+                "select balance from users where telegram_id=%s",
+                (int(telegram_id),),
+            ).fetchone()
+            if row is None:
+                return None
+            current_balance = round(float(row["balance"] or 0.0), 2)
+            new_balance = round(current_balance + float(amount), 2)
             conn.execute(
                 "update users set balance=%s, updated_at=%s where telegram_id=%s",
                 (float(new_balance), self._now(), int(telegram_id)),

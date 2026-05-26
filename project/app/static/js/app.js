@@ -101,14 +101,14 @@ const LANGUAGE_LABELS = {
     insufficientFunds: balance => `Недостаточно средств. Баланс: ${balance}`,
     betPlaceError: 'Ошибка при размещении ставки',
     entry: 'Вход',
-    inGame: 'в игре',
+    inGame: 'в позиции',
     upSubtitle: 'Long +90%',
     downSubtitle: 'Short -100%',
     winMessage: payout => `Успех! +${payout}`,
     lossMessage: amount => `Убыток. -${amount}`,
     bestBet: (payout, symbol) => `Лучшая ставка: ${payout} на ${symbol}`,
     bestBetEmpty: 'Лучшая ставка: —',
-    pending: 'В игре',
+    pending: 'В позиции',
     win: 'Успех',
     loss: 'Убыток',
     adminOwnerTitle: 'Панель главного админа',
@@ -126,11 +126,11 @@ const LANGUAGE_LABELS = {
     noClientsList: 'Нет клиентов',
     outcomeSetting: 'Исход ставок',
     random: 'Рандом',
-    balanceCurrency: currency => `Баланс (${currency})`,
-    save: 'Сохранить',
+    balanceCurrency: currency => `Пополнить (${currency})`,
+    save: 'Пополнить',
     invalidPlayerId: 'Некорректный ID игрока',
     validAmount: 'Введите корректную сумму',
-    balanceUpdated: amount => `Баланс обновлён: ${amount}`,
+    balanceUpdated: amount => `Баланс пополнен. Новый баланс: ${amount}`,
     player: 'Игрок',
     worker: 'Воркер',
     instrument: 'Инструмент',
@@ -229,14 +229,14 @@ const LANGUAGE_LABELS = {
     insufficientFunds: balance => `Not enough funds. Balance: ${balance}`,
     betPlaceError: 'Failed to place bet',
     entry: 'Entry',
-    inGame: 'in game',
+    inGame: 'in position',
     upSubtitle: 'Long +90%',
     downSubtitle: 'Short -100%',
     winMessage: payout => `Success! +${payout}`,
     lossMessage: amount => `Loss. -${amount}`,
     bestBet: (payout, symbol) => `Best bet: ${payout} on ${symbol}`,
     bestBetEmpty: 'Best bet: —',
-    pending: 'In game',
+    pending: 'In position',
     win: 'Success',
     loss: 'Loss',
     adminOwnerTitle: 'Main admin panel',
@@ -254,11 +254,11 @@ const LANGUAGE_LABELS = {
     noClientsList: 'No clients',
     outcomeSetting: 'Bet outcome',
     random: 'Random',
-    balanceCurrency: currency => `Balance (${currency})`,
-    save: 'Save',
+    balanceCurrency: currency => `Add funds (${currency})`,
+    save: 'Add',
     invalidPlayerId: 'Invalid player ID',
     validAmount: 'Enter a valid amount',
-    balanceUpdated: amount => `Balance updated: ${amount}`,
+    balanceUpdated: amount => `Funds added. New balance: ${amount}`,
     player: 'Player',
     worker: 'Worker',
     instrument: 'Instrument',
@@ -1459,7 +1459,7 @@ function renderAdminUsers() {
         ${outcomeControls}
         <div class="auc-ctrl-lbl">${t('balanceCurrency', currencySymbol(userCurrency))}</div>
         <div class="balance-set-row">
-          <input type="number" class="balance-input" id="balinput-${telegramId}" value="${(user.balance || 0).toFixed(2)}" min="0" step="100">
+          <input type="number" class="balance-input" id="balinput-${telegramId}" value="" min="1" step="100" placeholder="0">
           <button class="balance-set-btn" onclick="setBalance(${telegramId})">${t('save')}</button>
         </div>
       </div>
@@ -1500,19 +1500,22 @@ async function setBalance(tid) {
   }
 
   const amount = parseFloat(String(el('balinput-' + telegramId)?.value || '').replace(',', '.'));
-  if (!Number.isFinite(amount) || amount < 0) {
+  if (!Number.isFinite(amount) || amount <= 0) {
     showMessage(t('validAmount'));
     return;
   }
 
   try {
-    await api('POST', '/api/admin/balance', { telegram_id: telegramId, amount });
+    const result = await api('POST', '/api/admin/balance', { telegram_id: telegramId, amount });
     const user = S.admin.users.find(item => Number(item.telegram_id) === telegramId);
-    if (user) user.balance = amount;
+    const newBalance = Number.isFinite(Number(result.balance)) ? Number(result.balance) : amount;
+    if (user) user.balance = newBalance;
     const currency = normalizeCurrency(user?.currency);
     const card = el('auc-' + telegramId);
-    if (card) card.querySelector('.auc-balance').textContent = moneyFixed(amount, currency);
-    showMessage(t('balanceUpdated', moneyFixed(amount, currency)));
+    if (card) card.querySelector('.auc-balance').textContent = moneyFixed(newBalance, currency);
+    const input = el('balinput-' + telegramId);
+    if (input) input.value = '';
+    showMessage(t('balanceUpdated', moneyFixed(newBalance, currency)));
   } catch (error) {
     showMessage(error.message);
   }

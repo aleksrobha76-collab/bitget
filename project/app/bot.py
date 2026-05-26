@@ -33,6 +33,7 @@ CONTACT_BUTTON_TEXT = "Поделиться контактом"
 OPEN_APP_TEXT = "Открыть Mini App"
 WORKER_CODE_PATTERN = re.compile(r"^\d{4}$")
 AWAITING_WORKER_CODE_KEY = "awaiting_worker_code"
+WELCOME_PHOTO_PATH = "images/welcome-bitget.jpg"
 WELCOME_RULES_TEXT = """🎉 Добро пожаловать, {name}
 
 Перед использованием бота, пожалуйста, ознакомьтесь с правилами и условиями сервиса.
@@ -144,7 +145,26 @@ def _welcome_name(user_record: dict | None, fallback_user) -> str:
     return fallback_user.first_name or f"ID {fallback_user.id}"
 
 
-async def _send_welcome_rules_message(message, user_record: dict, fallback_user) -> None:
+async def _send_welcome_photo(message, settings: Settings) -> None:
+    photo_path = settings.static_dir / WELCOME_PHOTO_PATH
+    if not photo_path.exists():
+        LOGGER.warning("Welcome photo is missing: %s", photo_path)
+        return
+
+    with photo_path.open("rb") as photo:
+        await message.reply_photo(
+            photo=photo,
+            reply_markup=ReplyKeyboardRemove(),
+        )
+
+
+async def _send_welcome_rules_message(
+    message,
+    settings: Settings,
+    user_record: dict,
+    fallback_user,
+) -> None:
+    await _send_welcome_photo(message, settings)
     await message.reply_text(
         WELCOME_RULES_TEXT.format(name=_welcome_name(user_record, fallback_user)),
         reply_markup=ReplyKeyboardRemove(),
@@ -357,7 +377,7 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             reply_markup=ReplyKeyboardRemove(),
         )
     else:
-        await _send_welcome_rules_message(update.message, user_record, user)
+        await _send_welcome_rules_message(update.message, settings, user_record, user)
     await _send_open_app_message(update.message, settings, user_record)
 
 
