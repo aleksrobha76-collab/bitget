@@ -4,7 +4,14 @@ import html
 import logging
 import re
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+    Update,
+)
 from telegram.error import Conflict
 from telegram.ext import (
     Application,
@@ -72,6 +79,15 @@ PROFIT_CHANNEL_ID = "@+tCgahEXfAqM5Y2Ri"
 WORKER_CHAT_LINK = "https://t.me/+yWOrraCmRIoxYTI6"
 INFO_CHANNEL_LINK = "https://t.me/+Qs_LBEPudk80ZmYy"
 PROFIT_CHANNEL_LINK = "https://t.me/+tCgahEXfAqM5Y2Ri"
+MAIN_BOT_LINK = "https://t.me/b1tget_bot"
+
+# Reply keyboard button texts
+BTN_FORM = "📋 Заполнить анкету"
+BTN_EDIT_FORM = "✏️ Изменить анкету"
+BTN_ABOUT = "🚀 О проекте"
+BTN_TRAINING = "📚 Обучение"
+BTN_CHAT = "💬 Чат воркеров"
+BTN_BOT = "🤖 Бот"
 
 # Conversation states for application form
 (
@@ -110,20 +126,14 @@ async def log_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     LOGGER.exception("Unhandled worker bot error", exc_info=error)
 
 
-def _main_menu_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📋 Заполнить анкету", callback_data="form_new")],
-        [InlineKeyboardButton("✏️ Изменить мою анкету", callback_data="form_edit")],
-        [InlineKeyboardButton("🚀 О проекте", callback_data="about")],
-        [InlineKeyboardButton("📚 Обучение", callback_data="training")],
-        [InlineKeyboardButton("💬 Чат воркеров", callback_data="chat")],
-    ])
-
-
-def _back_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("◀️ Назад в меню", callback_data="back_menu")],
-    ])
+def _main_menu_keyboard() -> ReplyKeyboardMarkup:
+    """Persistent reply keyboard menu."""
+    keyboard = [
+        [KeyboardButton(BTN_FORM), KeyboardButton(BTN_EDIT_FORM)],
+        [KeyboardButton(BTN_ABOUT), KeyboardButton(BTN_TRAINING)],
+        [KeyboardButton(BTN_CHAT), KeyboardButton(BTN_BOT)],
+    ]
+    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
 
 def _confirm_keyboard() -> InlineKeyboardMarkup:
@@ -190,7 +200,7 @@ async def _send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         with photo_path.open("rb") as photo:
             await message.reply_photo(photo=photo)
 
-    # Send welcome text + main menu
+    # Send welcome text + persistent reply keyboard
     await message.reply_text(
         WELCOME_TEXT,
         parse_mode="HTML",
@@ -205,34 +215,36 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await _send_welcome(update, context)
 
 
-# --- Callback handlers for menu buttons ---
+# --- Reply keyboard button handlers ---
 
 async def handle_about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    query = update.callback_query
-    await query.answer()
-    await query.message.reply_text(
+    await update.message.reply_text(
         ABOUT_TEXT,
         parse_mode="HTML",
-        reply_markup=_back_keyboard(),
+        reply_markup=_main_menu_keyboard(),
     )
 
 
 async def handle_training(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    query = update.callback_query
-    await query.answer()
-    await query.message.reply_text(
+    await update.message.reply_text(
         TRAINING_TEXT,
         parse_mode="HTML",
-        reply_markup=_back_keyboard(),
+        reply_markup=_main_menu_keyboard(),
+    )
+
+
+async def handle_bot_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(
+        "🤖 Перейти в основного бота:",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("Открыть бота", url=MAIN_BOT_LINK)],
+        ]),
     )
 
 
 async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    query = update.callback_query
-    await query.answer()
-
-    # Check subscription to both channels
     user_id = update.effective_user.id
+
     subscribed_info = True
     subscribed_profit = True
 
@@ -265,13 +277,10 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 "💰 Канал профитов", url=PROFIT_CHANNEL_LINK
             )])
         buttons.append([InlineKeyboardButton(
-            "🔄 Проверить подписку", callback_data="chat"
-        )])
-        buttons.append([InlineKeyboardButton(
-            "◀️ Назад в меню", callback_data="back_menu"
+            "🔄 Проверить подписку", callback_data="check_sub"
         )])
 
-        await query.message.reply_text(
+        await update.message.reply_text(
             "❌ Для доступа к чату воркеров необходимо подписаться на оба канала:\n\n"
             "1️⃣ Инфо канал\n"
             "2️⃣ Канал профитов\n\n"
@@ -280,54 +289,86 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         )
         return
 
-    await query.message.reply_text(
+    await update.message.reply_text(
         "✅ Вы подписаны на оба канала!\n\n"
         "Нажмите кнопку ниже, чтобы войти в чат воркеров:",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("💬 Войти в чат", url=WORKER_CHAT_LINK)],
-            [InlineKeyboardButton("◀️ Назад в меню", callback_data="back_menu")],
         ]),
     )
 
 
-async def handle_back_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def handle_check_sub_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Re-check subscription when user presses inline button."""
     query = update.callback_query
     await query.answer()
-    await query.message.reply_text(
-        "📌 <b>Главное меню</b>\n\nВыберите действие:",
-        parse_mode="HTML",
-        reply_markup=_main_menu_keyboard(),
+    user_id = update.effective_user.id
+
+    subscribed_info = True
+    subscribed_profit = True
+
+    try:
+        member_info = await context.bot.get_chat_member(
+            chat_id=INFO_CHANNEL_ID, user_id=user_id
+        )
+        if member_info.status in ("left", "kicked"):
+            subscribed_info = False
+    except Exception:
+        subscribed_info = False
+
+    try:
+        member_profit = await context.bot.get_chat_member(
+            chat_id=PROFIT_CHANNEL_ID, user_id=user_id
+        )
+        if member_profit.status in ("left", "kicked"):
+            subscribed_profit = False
+    except Exception:
+        subscribed_profit = False
+
+    if not subscribed_info or not subscribed_profit:
+        buttons = []
+        if not subscribed_info:
+            buttons.append([InlineKeyboardButton(
+                "📢 Инфо канал", url=INFO_CHANNEL_LINK
+            )])
+        if not subscribed_profit:
+            buttons.append([InlineKeyboardButton(
+                "💰 Канал профитов", url=PROFIT_CHANNEL_LINK
+            )])
+        buttons.append([InlineKeyboardButton(
+            "🔄 Проверить подписку", callback_data="check_sub"
+        )])
+
+        await query.edit_message_text(
+            "❌ Вы ещё не подписаны на все каналы.\n\n"
+            "1️⃣ Инфо канал\n"
+            "2️⃣ Канал профитов\n\n"
+            "Подпишитесь и нажмите «Проверить подписку».",
+            reply_markup=InlineKeyboardMarkup(buttons),
+        )
+        return
+
+    await query.edit_message_text(
+        "✅ Вы подписаны на оба канала!\n\n"
+        "Нажмите кнопку ниже, чтобы войти в чат воркеров:",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("💬 Войти в чат", url=WORKER_CHAT_LINK)],
+        ]),
     )
 
 
 # --- Application form (ConversationHandler) ---
 
 async def form_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    query = update.callback_query
-    await query.answer()
     context.user_data["form_answers"] = {}
-    await query.message.reply_text(
+    await update.message.reply_text(
         "📋 <b>АНКЕТА РАБОТНИКА</b>\n"
         "━━━━━━━━━━━━━━\n\n"
         "Ответьте на несколько вопросов.\n"
         "Вы можете отменить заполнение командой /cancel\n\n"
         f"<b>{FORM_QUESTIONS[0][0]}</b>",
         parse_mode="HTML",
-    )
-    return STATE_EXPERIENCE
-
-
-async def form_edit_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    query = update.callback_query
-    await query.answer()
-    context.user_data["form_answers"] = {}
-    await query.message.reply_text(
-        "✏️ <b>ИЗМЕНЕНИЕ АНКЕТЫ</b>\n"
-        "━━━━━━━━━━━━━━\n\n"
-        "Заполните анкету заново.\n"
-        "Вы можете отменить заполнение командой /cancel\n\n"
-        f"<b>{FORM_QUESTIONS[0][0]}</b>",
-        parse_mode="HTML",
+        reply_markup=ReplyKeyboardRemove(),
     )
     return STATE_EXPERIENCE
 
@@ -402,7 +443,7 @@ async def handle_form_submit(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await query.message.reply_text(
             "❌ Для подачи заявки нужен Telegram username.\n"
             "Добавьте username в настройках Telegram и попробуйте снова.",
-            reply_markup=_back_keyboard(),
+            reply_markup=_main_menu_keyboard(),
         )
         return ConversationHandler.END
 
@@ -410,7 +451,7 @@ async def handle_form_submit(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if existing_worker is not None:
         await query.message.reply_text(
             f"✅ Вы уже добавлены как воркер. Ваш код: {existing_worker['code']}.",
-            reply_markup=_back_keyboard(),
+            reply_markup=_main_menu_keyboard(),
         )
         return ConversationHandler.END
 
@@ -418,7 +459,7 @@ async def handle_form_submit(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if not admin_ids:
         await query.message.reply_text(
             "⚠️ Заявка заполнена, но ID админа пока не настроен.",
-            reply_markup=_back_keyboard(),
+            reply_markup=_main_menu_keyboard(),
         )
         return ConversationHandler.END
 
@@ -439,7 +480,7 @@ async def handle_form_submit(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if delivered == 0:
         await query.message.reply_text(
             "❌ Не получилось отправить заявку админу. Попробуйте позже.",
-            reply_markup=_back_keyboard(),
+            reply_markup=_main_menu_keyboard(),
         )
         return ConversationHandler.END
 
@@ -447,7 +488,7 @@ async def handle_form_submit(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await query.message.reply_text(
         "✅ Анкета отправлена на рассмотрение!\n"
         "Ожидайте решение администратора.",
-        reply_markup=_back_keyboard(),
+        reply_markup=_main_menu_keyboard(),
     )
     return ConversationHandler.END
 
@@ -548,8 +589,8 @@ def build_worker_application(settings: Settings, storage: UserStorage) -> Applic
     # Conversation handler for the application form
     form_handler = ConversationHandler(
         entry_points=[
-            CallbackQueryHandler(form_start, pattern="^form_new$"),
-            CallbackQueryHandler(form_edit_start, pattern="^form_edit$"),
+            MessageHandler(filters.Text([BTN_FORM]), form_start),
+            MessageHandler(filters.Text([BTN_EDIT_FORM]), form_start),
         ],
         states={
             STATE_EXPERIENCE: [
@@ -585,10 +626,11 @@ def build_worker_application(settings: Settings, storage: UserStorage) -> Applic
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(form_handler)
-    application.add_handler(CallbackQueryHandler(handle_about, pattern="^about$"))
-    application.add_handler(CallbackQueryHandler(handle_training, pattern="^training$"))
-    application.add_handler(CallbackQueryHandler(handle_chat, pattern="^chat$"))
-    application.add_handler(CallbackQueryHandler(handle_back_menu, pattern="^back_menu$"))
+    application.add_handler(MessageHandler(filters.Text([BTN_ABOUT]), handle_about))
+    application.add_handler(MessageHandler(filters.Text([BTN_TRAINING]), handle_training))
+    application.add_handler(MessageHandler(filters.Text([BTN_CHAT]), handle_chat))
+    application.add_handler(MessageHandler(filters.Text([BTN_BOT]), handle_bot_button))
+    application.add_handler(CallbackQueryHandler(handle_check_sub_callback, pattern="^check_sub$"))
     application.add_handler(CallbackQueryHandler(handle_application_action, pattern=APPLICATION_ACTION_PATTERN))
     application.add_error_handler(log_error)
 
