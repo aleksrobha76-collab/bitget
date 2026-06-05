@@ -11,6 +11,7 @@ from telegram.ext import (
     ApplicationBuilder,
     CallbackQueryHandler,
     CommandHandler,
+    ConversationHandler,
     ContextTypes,
     MessageHandler,
     filters,
@@ -23,24 +24,76 @@ from .storage import UserStorage
 
 LOGGER = logging.getLogger(__name__)
 APPLICATION_ACTION_PATTERN = re.compile(r"^worker_app:(accept|reject):(\d+):([A-Za-z0-9_]+)$")
-AWAITING_RESUME_KEY = "awaiting_worker_resume"
 
+# Welcome photo path (relative to static_dir)
+WELCOME_PHOTO_PATH = "images/welcome-worker.png"
 
-RULES_TEXT = """Привет! Здесь можно оставить заявку на роль воркера.
+# Welcome text (from screenshot 2)
+WELCOME_TEXT = (
+    "🎉 <b>Добро пожаловать в BlackChip Team!</b>\n\n"
+    "Это бот для создания и управления заявками. "
+    "Следуйте инструкциям, чтобы начать работу.\n\n"
+    "🛡 <b>Быстро и безопасно</b>\n"
+    "└ Ваши данные под защитой\n\n"
+    "⚡ <b>Удобное управление</b>\n"
+    "└ Простое создание и контроль заявок\n\n"
+    "🎧 <b>ТС всегда на связи</b>\n"
+    "└ Мы всегда готовы помочь"
+)
 
-Правила:
-1. Не спамить клиентам.
-2. Не обещать то, чего нет в условиях.
-3. Работать только со своего Telegram username.
+# About project text
+ABOUT_TEXT = (
+    "🚀 <b>О НАШЕМ ПРОЕКТЕ</b>\n\n"
+    "Мы предлагаем прозрачные условия, стабильную работу "
+    "и высокий процент выплат.\n\n"
+    "💰 Депозит — до 75%\n"
+    "💸 Прямой перевод — до 70%\n"
+    "🤝 Техническая поддержка — до 65%\n\n"
+    "⚡️ Моментальная обработка заявок\n"
+    "💳 Выплаты на любые криптокошельки\n"
+    "🛠 Постоянная поддержка команды\n"
+    "📈 Высокие проценты по каждому направлению\n"
+    "🔒 Надёжная и удобная система работы\n\n"
+    "Присоединяйтесь к команде и получайте максимум "
+    "от каждого рабочего процесса."
+)
 
-Пример резюме:
-Имя: Иван
-Опыт: 6 месяцев
-Откуда трафик: TikTok / Telegram / личные контакты
-Сколько времени готов уделять: 3-4 часа в день
-Почему хотите работать: хочу развиваться и приводить клиентов
+# Training text (placeholder)
+TRAINING_TEXT = (
+    "📚 <b>ОБУЧЕНИЕ</b>\n\n"
+    "Раздел обучения находится в разработке.\n"
+    "Скоро здесь появятся подробные материалы и инструкции.\n\n"
+    "Следите за обновлениями! 🔔"
+)
 
-Отправьте резюме одним сообщением."""
+# Channels for subscription check
+INFO_CHANNEL_ID = "@+Qs_LBEPudk80ZmYy"
+PROFIT_CHANNEL_ID = "@+tCgahEXfAqM5Y2Ri"
+WORKER_CHAT_LINK = "https://t.me/+yWOrraCmRIoxYTI6"
+INFO_CHANNEL_LINK = "https://t.me/+Qs_LBEPudk80ZmYy"
+PROFIT_CHANNEL_LINK = "https://t.me/+tCgahEXfAqM5Y2Ri"
+
+# Conversation states for application form
+(
+    STATE_EXPERIENCE,
+    STATE_PROFIT,
+    STATE_TIME,
+    STATE_VOLUMES,
+    STATE_SOURCE,
+    STATE_MOTIVATION,
+    STATE_CONFIRM,
+) = range(7)
+
+FORM_QUESTIONS = [
+    ("💼 Опыт работы в данной сфере:", STATE_EXPERIENCE),
+    ("📈 Общий профит за всё время работы:", STATE_PROFIT),
+    ("⏳ Сколько времени готовы уделять работе ежедневно:", STATE_TIME),
+    ("📊 С какими объёмами работали ранее:", STATE_VOLUMES),
+    ("📢 Откуда узнали о нас:", STATE_SOURCE),
+    ("🎯 Почему хотите присоединиться к команде:", STATE_MOTIVATION),
+]
+
+FORM_KEYS = ["experience", "profit", "time", "volumes", "source", "motivation"]
 
 
 async def _post_init(application: Application) -> None:
@@ -57,22 +110,29 @@ async def log_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     LOGGER.exception("Unhandled worker bot error", exc_info=error)
 
 
-def build_worker_application(settings: Settings, storage: UserStorage) -> Application:
-    application = (
-        ApplicationBuilder()
-        .token(settings.worker_bot_token)
-        .post_init(_post_init)
-        .build()
-    )
-    application.bot_data["settings"] = settings
-    application.bot_data["storage"] = storage
+def _main_menu_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("📋 Заполнить анкету", callback_data="form_new")],
+        [InlineKeyboardButton("✏️ Изменить мою анкету", callback_data="form_edit")],
+        [InlineKeyboardButton("🚀 О проекте", callback_data="about")],
+        [InlineKeyboardButton("📚 Обучение", callback_data="training")],
+        [InlineKeyboardButton("💬 Чат воркеров", callback_data="chat")],
+    ])
 
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CallbackQueryHandler(handle_application_action, pattern=APPLICATION_ACTION_PATTERN))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_resume))
-    application.add_error_handler(log_error)
 
-    return application
+def _back_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("◀️ Назад в меню", callback_data="back_menu")],
+    ])
+
+
+def _confirm_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✅ Отправить", callback_data="form_submit"),
+            InlineKeyboardButton("❌ Отменить", callback_data="form_cancel"),
+        ],
+    ])
 
 
 def _admin_keyboard(applicant_id: int, username: str) -> InlineKeyboardMarkup:
@@ -80,74 +140,289 @@ def _admin_keyboard(applicant_id: int, username: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("Принять", callback_data=f"worker_app:accept:{payload}"),
-                InlineKeyboardButton("Отклонить", callback_data=f"worker_app:reject:{payload}"),
+                InlineKeyboardButton("✅ Принять", callback_data=f"worker_app:accept:{payload}"),
+                InlineKeyboardButton("❌ Отклонить", callback_data=f"worker_app:reject:{payload}"),
             ]
         ]
     )
 
 
-def _format_applicant(user, resume: str) -> str:
+def _format_application(answers: dict) -> str:
+    return (
+        "📋 <b>АНКЕТА РАБОТНИКА</b>\n"
+        "━━━━━━━━━━━━━━\n\n"
+        f"💼 <b>Опыт работы в данной сфере:</b>\n"
+        f"└ {html.escape(answers.get('experience', '—'))}\n\n"
+        f"📈 <b>Общий профит за всё время работы:</b>\n"
+        f"└ {html.escape(answers.get('profit', '—'))}\n\n"
+        f"⏳ <b>Сколько времени готовы уделять работе ежедневно:</b>\n"
+        f"└ {html.escape(answers.get('time', '—'))}\n\n"
+        f"📊 <b>С какими объёмами работали ранее:</b>\n"
+        f"└ {html.escape(answers.get('volumes', '—'))}\n\n"
+        f"📢 <b>Откуда узнали о нас:</b>\n"
+        f"└ {html.escape(answers.get('source', '—'))}\n\n"
+        f"🎯 <b>Почему хотите присоединиться к команде:</b>\n"
+        f"└ {html.escape(answers.get('motivation', '—'))}"
+    )
+
+
+def _format_applicant_for_admin(user, answers: dict) -> str:
     username = f"@{user.username}" if user.username else "без username"
     full_name = " ".join(
         part for part in (user.first_name, user.last_name) if part
     ) or "не указано"
-    safe_resume = html.escape(resume.strip())
     return (
-        "<b>Новая заявка воркера</b>\n\n"
+        "<b>📩 Новая заявка воркера</b>\n\n"
         f"<b>Имя:</b> {html.escape(full_name)}\n"
         f"<b>Username:</b> {html.escape(username)}\n"
         f"<b>Telegram ID:</b> <code>{user.id}</code>\n\n"
-        f"<b>Резюме:</b>\n{safe_resume}"
+        + _format_application(answers)
+    )
+
+
+async def _send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    settings: Settings = context.application.bot_data["settings"]
+    message = update.message
+
+    # Send photo
+    photo_path = settings.static_dir / WELCOME_PHOTO_PATH
+    if photo_path.exists():
+        with photo_path.open("rb") as photo:
+            await message.reply_photo(photo=photo)
+
+    # Send welcome text + main menu
+    await message.reply_text(
+        WELCOME_TEXT,
+        parse_mode="HTML",
+        reply_markup=_main_menu_keyboard(),
     )
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message is None:
         return
-    context.user_data[AWAITING_RESUME_KEY] = True
-    await update.message.reply_text(RULES_TEXT)
+    context.user_data.pop("form_answers", None)
+    await _send_welcome(update, context)
 
 
-async def handle_resume(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user = update.effective_user
-    message = update.message
-    if user is None or message is None:
-        return
+# --- Callback handlers for menu buttons ---
 
-    settings: Settings = context.application.bot_data["settings"]
-    storage: UserStorage = context.application.bot_data["storage"]
+async def handle_about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    await query.message.reply_text(
+        ABOUT_TEXT,
+        parse_mode="HTML",
+        reply_markup=_back_keyboard(),
+    )
 
-    if is_owner_account(user.id, user.username, settings):
-        await message.reply_text("Вы админ. Заявки воркеров будут приходить сюда на проверку.")
-        return
 
-    if not user.username:
-        await message.reply_text(
-            "Для заявки нужен Telegram username. Добавьте username в настройках Telegram и отправьте резюме ещё раз."
+async def handle_training(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    await query.message.reply_text(
+        TRAINING_TEXT,
+        parse_mode="HTML",
+        reply_markup=_back_keyboard(),
+    )
+
+
+async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+
+    # Check subscription to both channels
+    user_id = update.effective_user.id
+    subscribed_info = True
+    subscribed_profit = True
+
+    try:
+        member_info = await context.bot.get_chat_member(
+            chat_id=INFO_CHANNEL_ID, user_id=user_id
+        )
+        if member_info.status in ("left", "kicked"):
+            subscribed_info = False
+    except Exception:
+        subscribed_info = False
+
+    try:
+        member_profit = await context.bot.get_chat_member(
+            chat_id=PROFIT_CHANNEL_ID, user_id=user_id
+        )
+        if member_profit.status in ("left", "kicked"):
+            subscribed_profit = False
+    except Exception:
+        subscribed_profit = False
+
+    if not subscribed_info or not subscribed_profit:
+        buttons = []
+        if not subscribed_info:
+            buttons.append([InlineKeyboardButton(
+                "📢 Инфо канал", url=INFO_CHANNEL_LINK
+            )])
+        if not subscribed_profit:
+            buttons.append([InlineKeyboardButton(
+                "💰 Канал профитов", url=PROFIT_CHANNEL_LINK
+            )])
+        buttons.append([InlineKeyboardButton(
+            "🔄 Проверить подписку", callback_data="chat"
+        )])
+        buttons.append([InlineKeyboardButton(
+            "◀️ Назад в меню", callback_data="back_menu"
+        )])
+
+        await query.message.reply_text(
+            "❌ Для доступа к чату воркеров необходимо подписаться на оба канала:\n\n"
+            "1️⃣ Инфо канал\n"
+            "2️⃣ Канал профитов\n\n"
+            "Подпишитесь и нажмите «Проверить подписку».",
+            reply_markup=InlineKeyboardMarkup(buttons),
         )
         return
+
+    await query.message.reply_text(
+        "✅ Вы подписаны на оба канала!\n\n"
+        "Нажмите кнопку ниже, чтобы войти в чат воркеров:",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("💬 Войти в чат", url=WORKER_CHAT_LINK)],
+            [InlineKeyboardButton("◀️ Назад в меню", callback_data="back_menu")],
+        ]),
+    )
+
+
+async def handle_back_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    await query.message.reply_text(
+        "📌 <b>Главное меню</b>\n\nВыберите действие:",
+        parse_mode="HTML",
+        reply_markup=_main_menu_keyboard(),
+    )
+
+
+# --- Application form (ConversationHandler) ---
+
+async def form_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    query = update.callback_query
+    await query.answer()
+    context.user_data["form_answers"] = {}
+    await query.message.reply_text(
+        "📋 <b>АНКЕТА РАБОТНИКА</b>\n"
+        "━━━━━━━━━━━━━━\n\n"
+        "Ответьте на несколько вопросов.\n"
+        "Вы можете отменить заполнение командой /cancel\n\n"
+        f"<b>{FORM_QUESTIONS[0][0]}</b>",
+        parse_mode="HTML",
+    )
+    return STATE_EXPERIENCE
+
+
+async def form_edit_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    query = update.callback_query
+    await query.answer()
+    context.user_data["form_answers"] = {}
+    await query.message.reply_text(
+        "✏️ <b>ИЗМЕНЕНИЕ АНКЕТЫ</b>\n"
+        "━━━━━━━━━━━━━━\n\n"
+        "Заполните анкету заново.\n"
+        "Вы можете отменить заполнение командой /cancel\n\n"
+        f"<b>{FORM_QUESTIONS[0][0]}</b>",
+        parse_mode="HTML",
+    )
+    return STATE_EXPERIENCE
+
+
+async def _handle_form_step(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    key: str,
+    next_state: int,
+    next_question_idx: int | None,
+) -> int:
+    text = (update.message.text or "").strip()
+    if not text:
+        await update.message.reply_text("Пожалуйста, введите ответ текстом.")
+        return next_state - 1 if next_state > 0 else STATE_EXPERIENCE
+
+    answers = context.user_data.setdefault("form_answers", {})
+    answers[key] = text
+
+    if next_question_idx is not None and next_question_idx < len(FORM_QUESTIONS):
+        await update.message.reply_text(
+            f"<b>{FORM_QUESTIONS[next_question_idx][0]}</b>",
+            parse_mode="HTML",
+        )
+        return next_state
+
+    # All questions answered — show confirmation
+    preview = _format_application(answers)
+    await update.message.reply_text(
+        f"{preview}\n\n"
+        "━━━━━━━━━━━━━━\n"
+        "Проверьте анкету и подтвердите отправку:",
+        parse_mode="HTML",
+        reply_markup=_confirm_keyboard(),
+    )
+    return STATE_CONFIRM
+
+
+async def handle_experience(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await _handle_form_step(update, context, "experience", STATE_PROFIT, 1)
+
+
+async def handle_profit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await _handle_form_step(update, context, "profit", STATE_TIME, 2)
+
+
+async def handle_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await _handle_form_step(update, context, "time", STATE_VOLUMES, 3)
+
+
+async def handle_volumes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await _handle_form_step(update, context, "volumes", STATE_SOURCE, 4)
+
+
+async def handle_source(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await _handle_form_step(update, context, "source", STATE_MOTIVATION, 5)
+
+
+async def handle_motivation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await _handle_form_step(update, context, "motivation", STATE_CONFIRM, None)
+
+
+async def handle_form_submit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    query = update.callback_query
+    await query.answer()
+    user = update.effective_user
+    settings: Settings = context.application.bot_data["settings"]
+    storage: UserStorage = context.application.bot_data["storage"]
+    answers = context.user_data.get("form_answers", {})
+
+    if not user.username:
+        await query.message.reply_text(
+            "❌ Для подачи заявки нужен Telegram username.\n"
+            "Добавьте username в настройках Telegram и попробуйте снова.",
+            reply_markup=_back_keyboard(),
+        )
+        return ConversationHandler.END
 
     existing_worker = storage.get_worker_by_username(user.username)
     if existing_worker is not None:
-        await message.reply_text(
-            f"Вы уже добавлены как воркер. Ваш код: {existing_worker['code']}."
+        await query.message.reply_text(
+            f"✅ Вы уже добавлены как воркер. Ваш код: {existing_worker['code']}.",
+            reply_markup=_back_keyboard(),
         )
-        return
-
-    resume = (message.text or "").strip()
-    if len(resume) < 20:
-        context.user_data[AWAITING_RESUME_KEY] = True
-        await message.reply_text("Напишите резюме чуть подробнее: опыт, источник трафика и сколько времени готовы работать.")
-        return
+        return ConversationHandler.END
 
     admin_ids = sorted(settings.admin_telegram_ids)
     if not admin_ids:
-        await message.reply_text("Заявка заполнена, но ID админа пока не настроен. Напишите администратору напрямую.")
-        LOGGER.warning("Worker application cannot be delivered: ADMIN_TELEGRAM_IDS is empty")
-        return
+        await query.message.reply_text(
+            "⚠️ Заявка заполнена, но ID админа пока не настроен.",
+            reply_markup=_back_keyboard(),
+        )
+        return ConversationHandler.END
 
-    text = _format_applicant(user, resume)
+    text = _format_applicant_for_admin(user, answers)
     delivered = 0
     for admin_id in admin_ids:
         try:
@@ -162,12 +437,42 @@ async def handle_resume(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             LOGGER.warning("Failed to deliver worker application to admin %s: %s", admin_id, exc)
 
     if delivered == 0:
-        await message.reply_text("Не получилось отправить заявку админу. Попробуйте позже.")
-        return
+        await query.message.reply_text(
+            "❌ Не получилось отправить заявку админу. Попробуйте позже.",
+            reply_markup=_back_keyboard(),
+        )
+        return ConversationHandler.END
 
-    context.user_data.pop(AWAITING_RESUME_KEY, None)
-    await message.reply_text("Резюме отправлено админу. Ожидайте решение.")
+    context.user_data.pop("form_answers", None)
+    await query.message.reply_text(
+        "✅ Анкета отправлена на рассмотрение!\n"
+        "Ожидайте решение администратора.",
+        reply_markup=_back_keyboard(),
+    )
+    return ConversationHandler.END
 
+
+async def handle_form_cancel_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    query = update.callback_query
+    await query.answer()
+    context.user_data.pop("form_answers", None)
+    await query.message.reply_text(
+        "❌ Заполнение анкеты отменено.",
+        reply_markup=_main_menu_keyboard(),
+    )
+    return ConversationHandler.END
+
+
+async def handle_form_cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    context.user_data.pop("form_answers", None)
+    await update.message.reply_text(
+        "❌ Заполнение анкеты отменено.",
+        reply_markup=_main_menu_keyboard(),
+    )
+    return ConversationHandler.END
+
+
+# --- Admin accept/reject handler ---
 
 async def handle_application_action(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
@@ -195,7 +500,7 @@ async def handle_application_action(update: Update, context: ContextTypes.DEFAUL
         try:
             await context.bot.send_message(
                 chat_id=applicant_id,
-                text="Ваша заявка отклонена.",
+                text="❌ Ваша заявка отклонена.",
             )
         except Exception as exc:
             LOGGER.warning("Failed to notify rejected applicant %s: %s", applicant_id, exc)
@@ -203,26 +508,88 @@ async def handle_application_action(update: Update, context: ContextTypes.DEFAUL
 
     try:
         worker = storage.create_worker(username)
-        admin_text = f"Воркер @{worker['username']} принят. Код: {worker['code']}."
+        admin_text = f"✅ Воркер @{worker['username']} принят. Код: {worker['code']}."
         worker_text = (
-            "Вас приняли. Ожидайте, админ свяжется с вами.\n"
-            f"Ваш код воркера: {worker['code']}"
+            "✅ Вас приняли! Ожидайте, админ свяжется с вами.\n"
+            f"Ваш код воркера: <b>{worker['code']}</b>"
         )
-    except ValueError as exc:
+    except ValueError:
         existing_worker = storage.get_worker_by_username(username)
         if existing_worker is None:
-            await query.answer(str(exc), show_alert=True)
+            await query.answer("Ошибка создания воркера", show_alert=True)
             return
         admin_text = f"@{existing_worker['username']} уже есть в воркерах. Код: {existing_worker['code']}."
         worker_text = (
-            "Вас приняли. Ожидайте, админ свяжется с вами.\n"
-            f"Ваш код воркера: {existing_worker['code']}"
+            "✅ Вас приняли! Ожидайте, админ свяжется с вами.\n"
+            f"Ваш код воркера: <b>{existing_worker['code']}</b>"
         )
 
     await query.answer("Принято")
     await query.edit_message_reply_markup(reply_markup=None)
     await query.message.reply_text(admin_text)
     try:
-        await context.bot.send_message(chat_id=applicant_id, text=worker_text)
+        await context.bot.send_message(
+            chat_id=applicant_id, text=worker_text, parse_mode="HTML"
+        )
     except Exception as exc:
         LOGGER.warning("Failed to notify accepted applicant %s: %s", applicant_id, exc)
+
+
+def build_worker_application(settings: Settings, storage: UserStorage) -> Application:
+    application = (
+        ApplicationBuilder()
+        .token(settings.worker_bot_token)
+        .post_init(_post_init)
+        .build()
+    )
+    application.bot_data["settings"] = settings
+    application.bot_data["storage"] = storage
+
+    # Conversation handler for the application form
+    form_handler = ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(form_start, pattern="^form_new$"),
+            CallbackQueryHandler(form_edit_start, pattern="^form_edit$"),
+        ],
+        states={
+            STATE_EXPERIENCE: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_experience),
+            ],
+            STATE_PROFIT: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_profit),
+            ],
+            STATE_TIME: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_time),
+            ],
+            STATE_VOLUMES: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_volumes),
+            ],
+            STATE_SOURCE: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_source),
+            ],
+            STATE_MOTIVATION: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_motivation),
+            ],
+            STATE_CONFIRM: [
+                CallbackQueryHandler(handle_form_submit, pattern="^form_submit$"),
+                CallbackQueryHandler(handle_form_cancel_button, pattern="^form_cancel$"),
+            ],
+        },
+        fallbacks=[
+            CommandHandler("cancel", handle_form_cancel_command),
+            CommandHandler("start", start),
+        ],
+        per_user=True,
+        per_chat=True,
+    )
+
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(form_handler)
+    application.add_handler(CallbackQueryHandler(handle_about, pattern="^about$"))
+    application.add_handler(CallbackQueryHandler(handle_training, pattern="^training$"))
+    application.add_handler(CallbackQueryHandler(handle_chat, pattern="^chat$"))
+    application.add_handler(CallbackQueryHandler(handle_back_menu, pattern="^back_menu$"))
+    application.add_handler(CallbackQueryHandler(handle_application_action, pattern=APPLICATION_ACTION_PATTERN))
+    application.add_error_handler(log_error)
+
+    return application
