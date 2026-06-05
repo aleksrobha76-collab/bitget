@@ -73,9 +73,9 @@ TRAINING_TEXT = (
     "Следите за обновлениями! 🔔"
 )
 
-# Channels for subscription check
-INFO_CHANNEL_ID = "@+Qs_LBEPudk80ZmYy"
-PROFIT_CHANNEL_ID = "@+tCgahEXfAqM5Y2Ri"
+# Channels for subscription check (numeric chat_id)
+INFO_CHANNEL_ID = -1003563055174
+PROFIT_CHANNEL_ID = -1003718897367
 WORKER_CHAT_LINK = "https://t.me/+yWOrraCmRIoxYTI6"
 INFO_CHANNEL_LINK = "https://t.me/+Qs_LBEPudk80ZmYy"
 PROFIT_CHANNEL_LINK = "https://t.me/+tCgahEXfAqM5Y2Ri"
