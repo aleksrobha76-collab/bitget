@@ -157,9 +157,8 @@ async def log_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 def _main_menu_keyboard() -> ReplyKeyboardMarkup:
-    """Full reply keyboard menu for approved workers."""
+    """Full reply keyboard menu for approved workers (no form buttons)."""
     keyboard = [
-        [KeyboardButton(BTN_FORM), KeyboardButton(BTN_EDIT_FORM)],
         [KeyboardButton(BTN_ABOUT), KeyboardButton(BTN_RULES)],
         [KeyboardButton(BTN_TRAINING), KeyboardButton(BTN_CHAT)],
         [KeyboardButton(BTN_BOT)],
@@ -500,6 +499,11 @@ async def handle_motivation(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 async def handle_form_submit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
     await query.answer()
+    # Remove inline confirm buttons from the preview message
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
     user = update.effective_user
     settings: Settings = context.application.bot_data["settings"]
     storage: UserStorage = context.application.bot_data["storage"]
