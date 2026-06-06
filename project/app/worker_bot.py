@@ -157,7 +157,7 @@ async def log_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 def _main_menu_keyboard() -> ReplyKeyboardMarkup:
-    """Persistent reply keyboard menu."""
+    """Full reply keyboard menu for approved workers."""
     keyboard = [
         [KeyboardButton(BTN_FORM), KeyboardButton(BTN_EDIT_FORM)],
         [KeyboardButton(BTN_ABOUT), KeyboardButton(BTN_RULES)],
@@ -165,6 +165,21 @@ def _main_menu_keyboard() -> ReplyKeyboardMarkup:
         [KeyboardButton(BTN_BOT)],
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
+
+def _newcomer_keyboard() -> ReplyKeyboardMarkup:
+    """Limited keyboard for users who haven't been approved yet."""
+    keyboard = [
+        [KeyboardButton(BTN_FORM)],
+    ]
+    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
+
+def _get_keyboard_for_user(storage: UserStorage, username: str | None) -> ReplyKeyboardMarkup:
+    """Return full menu if user is an approved worker, otherwise newcomer keyboard."""
+    if username and storage.get_worker_by_username(username) is not None:
+        return _main_menu_keyboard()
+    return _newcomer_keyboard()
 
 
 def _confirm_keyboard() -> InlineKeyboardMarkup:
@@ -221,7 +236,9 @@ def _format_applicant_for_admin(user, answers: dict) -> str:
 
 async def _send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     settings: Settings = context.application.bot_data["settings"]
+    storage: UserStorage = context.application.bot_data["storage"]
     message = update.message
+    user = update.effective_user
 
     # Send photo
     photo_path = settings.static_dir / WELCOME_PHOTO_PATH
@@ -229,11 +246,13 @@ async def _send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         with photo_path.open("rb") as photo:
             await message.reply_photo(photo=photo)
 
-    # Send welcome text + persistent reply keyboard
+    keyboard = _get_keyboard_for_user(storage, user.username if user else None)
+
+    # Send welcome text + appropriate reply keyboard
     await message.reply_text(
         WELCOME_TEXT,
         parse_mode="HTML",
-        reply_markup=_main_menu_keyboard(),
+        reply_markup=keyboard,
     )
 
 
@@ -246,7 +265,23 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 # --- Reply keyboard button handlers ---
 
+async def _check_worker_access(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+    """Check if user is an approved worker. If not, show a rejection message."""
+    storage: UserStorage = context.application.bot_data["storage"]
+    user = update.effective_user
+    if user and user.username and storage.get_worker_by_username(user.username) is not None:
+        return True
+    await update.message.reply_text(
+        "⛔ Эта функция доступна только после одобрения заявки.\n"
+        "Заполните анкету и дождитесь решения администратора.",
+        reply_markup=_newcomer_keyboard(),
+    )
+    return False
+
+
 async def handle_about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not await _check_worker_access(update, context):
+        return
     await update.message.reply_text(
         ABOUT_TEXT,
         parse_mode="HTML",
@@ -255,6 +290,8 @@ async def handle_about(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 async def handle_training(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not await _check_worker_access(update, context):
+        return
     await update.message.reply_text(
         TRAINING_TEXT,
         parse_mode="HTML",
@@ -263,6 +300,8 @@ async def handle_training(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 
 async def handle_bot_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not await _check_worker_access(update, context):
+        return
     await update.message.reply_text(
         "🤖 Перейти в основного бота:",
         reply_markup=InlineKeyboardMarkup([
@@ -272,6 +311,8 @@ async def handle_bot_button(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
 
 async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not await _check_worker_access(update, context):
+        return
     user_id = update.effective_user.id
 
     subscribed_info = True
@@ -468,7 +509,7 @@ async def handle_form_submit(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await query.message.reply_text(
             "❌ Для подачи заявки нужен Telegram username.\n"
             "Добавьте username в настройках Telegram и попробуйте снова.",
-            reply_markup=_main_menu_keyboard(),
+            reply_markup=_newcomer_keyboard(),
         )
         return ConversationHandler.END
 
@@ -505,7 +546,7 @@ async def handle_form_submit(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if delivered == 0:
         await query.message.reply_text(
             "❌ Не получилось отправить заявку админу. Попробуйте позже.",
-            reply_markup=_main_menu_keyboard(),
+            reply_markup=ReplyKeyboardRemove(),
         )
         return ConversationHandler.END
 
@@ -513,7 +554,7 @@ async def handle_form_submit(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await query.message.reply_text(
         "✅ Анкета отправлена на рассмотрение!\n"
         "Ожидайте решение администратора.",
-        reply_markup=_main_menu_keyboard(),
+        reply_markup=ReplyKeyboardRemove(),
     )
     return ConversationHandler.END
 
@@ -521,19 +562,25 @@ async def handle_form_submit(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def handle_form_cancel_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
     await query.answer()
+    storage: UserStorage = context.application.bot_data["storage"]
+    user = update.effective_user
     context.user_data.pop("form_answers", None)
+    keyboard = _get_keyboard_for_user(storage, user.username if user else None)
     await query.message.reply_text(
         "❌ Заполнение анкеты отменено.",
-        reply_markup=_main_menu_keyboard(),
+        reply_markup=keyboard,
     )
     return ConversationHandler.END
 
 
 async def handle_form_cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    storage: UserStorage = context.application.bot_data["storage"]
+    user = update.effective_user
     context.user_data.pop("form_answers", None)
+    keyboard = _get_keyboard_for_user(storage, user.username if user else None)
     await update.message.reply_text(
         "❌ Заполнение анкеты отменено.",
-        reply_markup=_main_menu_keyboard(),
+        reply_markup=keyboard,
     )
     return ConversationHandler.END
 
@@ -541,6 +588,8 @@ async def handle_form_cancel_command(update: Update, context: ContextTypes.DEFAU
 # --- Rules handler ---
 
 async def handle_rules(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not await _check_worker_access(update, context):
+        return
     await update.message.reply_text(
         RULES_TEXT,
         parse_mode="HTML",
@@ -613,7 +662,8 @@ async def handle_application_action(update: Update, context: ContextTypes.DEFAUL
     await query.message.reply_text(admin_text)
     try:
         await context.bot.send_message(
-            chat_id=applicant_id, text=worker_text, parse_mode="HTML"
+            chat_id=applicant_id, text=worker_text, parse_mode="HTML",
+            reply_markup=_main_menu_keyboard(),
         )
     except Exception as exc:
         LOGGER.warning("Failed to notify accepted applicant %s: %s", applicant_id, exc)
