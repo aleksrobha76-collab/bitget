@@ -35,34 +35,42 @@ APPLICATION_ACTION_PATTERN = re.compile(r"^worker_app:(accept|reject):(\d+):([A-
 # Welcome photo path (relative to static_dir)
 WELCOME_PHOTO_PATH = "images/welcome-worker.png"
 
-# Welcome text (from screenshot 2)
+# Welcome text
 WELCOME_TEXT = (
     "🎉 <b>Добро пожаловать в BlackChip Team!</b>\n\n"
-    "Это бот для создания и управления заявками. "
-    "Следуйте инструкциям, чтобы начать работу.\n\n"
-    "🛡 <b>Быстро и безопасно</b>\n"
-    "└ Ваши данные под защитой\n\n"
-    "⚡ <b>Удобное управление</b>\n"
-    "└ Простое создание и контроль заявок\n\n"
+    "Здесь вы можете быстро подать заявку на вступление в команду и начать работу\n\n"
+    "━━━━━━━━━━━━━━\n\n"
+    "⚡️ <b>Быстрое рассмотрение заявок</b>\n"
+    "└ Каждая заявка обрабатывается в кратчайшие сроки\n\n"
+    "🛡 <b>Безопасность и конфиденциальность</b>\n"
+    "└ Ваши данные остаются защищёнными\n\n"
     "🎧 <b>ТС всегда на связи</b>\n"
-    "└ Мы всегда готовы помочь"
+    "└ Готовы помочь и ответить на любые вопросы\n\n"
+    "━━━━━━━━━━━━━━\n\n"
+    "📋 Для начала работы просто подайте заявку и дождитесь ответа от ТС.\n\n"
+    "🔥 <b>BlackChip Team</b> — команда, ориентированная на результат, стабильность и долгосрочное сотрудничество."
 )
 
 # About project text
 ABOUT_TEXT = (
-    "🚀 <b>О НАШЕМ ПРОЕКТЕ</b>\n\n"
-    "Мы предлагаем прозрачные условия, стабильную работу "
-    "и высокий процент выплат.\n\n"
-    "💰 Депозит — до 75%\n"
-    "💸 Прямой перевод — до 70%\n"
-    "🤝 Техническая поддержка — до 65%\n\n"
-    "⚡️ Моментальная обработка заявок\n"
-    "💳 Выплаты на любые криптокошельки\n"
-    "🛠 Постоянная поддержка команды\n"
-    "📈 Высокие проценты по каждому направлению\n"
-    "🔒 Надёжная и удобная система работы\n\n"
-    "Присоединяйтесь к команде и получайте максимум "
-    "от каждого рабочего процесса."
+    "ℹ️ › <b>ИНФОРМАЦИЯ О ПРОЕКТЕ</b>\n\n"
+    "🌍 Работаем исключительно по:\n"
+    "🇷🇺 Россия | 🇧🇾 Беларусь\n\n"
+    "━━━━━━━━━━━━━━━━━━\n\n"
+    "📅 Дата открытия проекта:\n"
+    "┖ 06.06.2026\n\n"
+    "💸 Процент выплат:\n\n"
+    "┠ 💳 Платёж (депозит) — 75%\n"
+    "┠ 🎯 Платёж (прямик) — 70%\n"
+    "┠ 🛠 Платёж (техподдержка) — 65%\n"
+    "┖ ₿ Платёж Crypto — 75%\n\n"
+    "━━━━━━━━━━━━━━━━━━\n\n"
+    "✅ Стабильные выплаты\n"
+    "✅ Быстрая обработка заявок\n"
+    "✅ Поддержка на связи ежедневно\n"
+    "✅ Прозрачные условия сотрудничества\n"
+    "✅ Долгосрочная работа для каждого участника\n\n"
+    "⚡️ Главное правило проекта — качество работы, дисциплина и взаимное уважение внутри команды"
 )
 
 # Training text (placeholder)
@@ -71,6 +79,29 @@ TRAINING_TEXT = (
     "Раздел обучения находится в разработке.\n"
     "Скоро здесь появятся подробные материалы и инструкции.\n\n"
     "Следите за обновлениями! 🔔"
+)
+
+# Team rules text
+RULES_TEXT = (
+    "📋 <b>ПРАВИЛА КОМАНДЫ</b>\n\n"
+    "Перед началом работы каждый участник обязан ознакомиться с правилами. "
+    "Незнание правил не освобождает от ответственности. "
+    "За нарушения предусмотрены санкции: предупреждение, ограничение доступа "
+    "или полная блокировка без возможности восстановления.\n\n"
+    "🔹 Запрещена реклама сторонних проектов, каналов, чатов, ботов и любых ресурсов без согласования с Администрацией.\n\n"
+    "🔹 Запрещены продажа, покупка, обмен и поиск любых товаров или услуг без разрешения Администрации.\n\n"
+    "🔹 Запрещены оскорбления, провокации, угрозы, конфликты и любое неуважительное отношение к участникам команды.\n\n"
+    "🔹 Запрещены обсуждение политики, межнациональные конфликты, разжигание ненависти, экстремистские и нацистские высказывания в любой форме.\n\n"
+    "🔹 Запрещено оскорблять, дискредитировать или подрывать авторитет Администрации проекта.\n\n"
+    "🔹 Запрещены спам, флуд, бессмысленные сообщения, массовые упоминания участников и засорение чата.\n\n"
+    "🔹 Запрещено размещение материалов 18+, сцен насилия, жестокого контента, шокирующих материалов и другого нежелательного контента.\n\n"
+    "🔹 Запрещено выдавать себя за Администрацию, Техническую Поддержку или других участников проекта.\n\n"
+    "🔹 Запрещено распространять ложную информацию, вводить участников в заблуждение или намеренно дезинформировать команду.\n\n"
+    "🔹 Запрещено принимать средства на личные реквизиты, перенаправлять участников к сторонней поддержке или совершать любые действия от имени проекта без разрешения Администрации.\n\n"
+    "🔹 Запрещена передача рабочих материалов, внутренней информации и данных проекта третьим лицам.\n\n"
+    "🔹 Любые спорные ситуации решаются исключительно через Администрацию или Техническую Поддержку.\n\n"
+    "⚠️ <i>Администрация оставляет за собой право принимать меры в отношении участников, "
+    "действия которых наносят вред команде, даже если нарушение не указано напрямую в данных правилах.</i>"
 )
 
 # Channels for subscription check (numeric chat_id)
@@ -84,7 +115,8 @@ MAIN_BOT_LINK = "https://t.me/b1tget_bot"
 # Reply keyboard button texts
 BTN_FORM = "📋 Заполнить анкету"
 BTN_EDIT_FORM = "✏️ Изменить анкету"
-BTN_ABOUT = "🚀 О проекте"
+BTN_ABOUT = "ℹ️ О проекте"
+BTN_RULES = "📜 Правила команды"
 BTN_TRAINING = "📚 Обучение"
 BTN_CHAT = "💬 Чат воркеров"
 BTN_BOT = "🤖 Бот"
@@ -94,22 +126,20 @@ BTN_BOT = "🤖 Бот"
     STATE_EXPERIENCE,
     STATE_PROFIT,
     STATE_TIME,
-    STATE_VOLUMES,
     STATE_SOURCE,
     STATE_MOTIVATION,
     STATE_CONFIRM,
-) = range(7)
+) = range(6)
 
 FORM_QUESTIONS = [
     ("💼 Опыт работы в данной сфере:", STATE_EXPERIENCE),
     ("📈 Общий профит за всё время работы:", STATE_PROFIT),
     ("⏳ Сколько времени готовы уделять работе ежедневно:", STATE_TIME),
-    ("📊 С какими объёмами работали ранее:", STATE_VOLUMES),
     ("📢 Откуда узнали о нас:", STATE_SOURCE),
     ("🎯 Почему хотите присоединиться к команде:", STATE_MOTIVATION),
 ]
 
-FORM_KEYS = ["experience", "profit", "time", "volumes", "source", "motivation"]
+FORM_KEYS = ["experience", "profit", "time", "source", "motivation"]
 
 
 async def _post_init(application: Application) -> None:
@@ -130,8 +160,9 @@ def _main_menu_keyboard() -> ReplyKeyboardMarkup:
     """Persistent reply keyboard menu."""
     keyboard = [
         [KeyboardButton(BTN_FORM), KeyboardButton(BTN_EDIT_FORM)],
-        [KeyboardButton(BTN_ABOUT), KeyboardButton(BTN_TRAINING)],
-        [KeyboardButton(BTN_CHAT), KeyboardButton(BTN_BOT)],
+        [KeyboardButton(BTN_ABOUT), KeyboardButton(BTN_RULES)],
+        [KeyboardButton(BTN_TRAINING), KeyboardButton(BTN_CHAT)],
+        [KeyboardButton(BTN_BOT)],
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
@@ -167,8 +198,6 @@ def _format_application(answers: dict) -> str:
         f"└ {html.escape(answers.get('profit', '—'))}\n\n"
         f"⏳ <b>Сколько времени готовы уделять работе ежедневно:</b>\n"
         f"└ {html.escape(answers.get('time', '—'))}\n\n"
-        f"📊 <b>С какими объёмами работали ранее:</b>\n"
-        f"└ {html.escape(answers.get('volumes', '—'))}\n\n"
         f"📢 <b>Откуда узнали о нас:</b>\n"
         f"└ {html.escape(answers.get('source', '—'))}\n\n"
         f"🎯 <b>Почему хотите присоединиться к команде:</b>\n"
@@ -416,15 +445,11 @@ async def handle_profit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
 
 async def handle_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    return await _handle_form_step(update, context, "time", STATE_VOLUMES, 3)
-
-
-async def handle_volumes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    return await _handle_form_step(update, context, "volumes", STATE_SOURCE, 4)
+    return await _handle_form_step(update, context, "time", STATE_SOURCE, 3)
 
 
 async def handle_source(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    return await _handle_form_step(update, context, "source", STATE_MOTIVATION, 5)
+    return await _handle_form_step(update, context, "source", STATE_MOTIVATION, 4)
 
 
 async def handle_motivation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -511,6 +536,24 @@ async def handle_form_cancel_command(update: Update, context: ContextTypes.DEFAU
         reply_markup=_main_menu_keyboard(),
     )
     return ConversationHandler.END
+
+
+# --- Rules handler ---
+
+async def handle_rules(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(
+        RULES_TEXT,
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("Ознакомлен ✅", callback_data="rules_ack")],
+        ]),
+    )
+
+
+async def handle_rules_ack(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer("Спасибо! Правила приняты ✅", show_alert=False)
+    await query.edit_message_reply_markup(reply_markup=None)
 
 
 # --- Admin accept/reject handler ---
@@ -602,9 +645,6 @@ def build_worker_application(settings: Settings, storage: UserStorage) -> Applic
             STATE_TIME: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_time),
             ],
-            STATE_VOLUMES: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_volumes),
-            ],
             STATE_SOURCE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_source),
             ],
@@ -627,9 +667,11 @@ def build_worker_application(settings: Settings, storage: UserStorage) -> Applic
     application.add_handler(CommandHandler("start", start))
     application.add_handler(form_handler)
     application.add_handler(MessageHandler(filters.Text([BTN_ABOUT]), handle_about))
+    application.add_handler(MessageHandler(filters.Text([BTN_RULES]), handle_rules))
     application.add_handler(MessageHandler(filters.Text([BTN_TRAINING]), handle_training))
     application.add_handler(MessageHandler(filters.Text([BTN_CHAT]), handle_chat))
     application.add_handler(MessageHandler(filters.Text([BTN_BOT]), handle_bot_button))
+    application.add_handler(CallbackQueryHandler(handle_rules_ack, pattern="^rules_ack$"))
     application.add_handler(CallbackQueryHandler(handle_check_sub_callback, pattern="^check_sub$"))
     application.add_handler(CallbackQueryHandler(handle_application_action, pattern=APPLICATION_ACTION_PATTERN))
     application.add_error_handler(log_error)
