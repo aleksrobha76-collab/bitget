@@ -132,16 +132,16 @@
             </div>
           </div>
           <div class="perf-panel">
-            <div class="perf-label" data-i18n="betHistory">История ставок</div>
+            <div class="perf-label" data-i18n="betHistory">История сделок</div>
             <div id="bets-list" class="bets-list-compact">
-              <div class="empty-state" data-i18n="noBets">Нет ставок</div>
+              <div class="empty-state" data-i18n="noBets">Нет сделок</div>
             </div>
           </div>
-          <div class="summary-strip" id="stats-summary">Лучшая ставка: —</div>
+          <div class="summary-strip" id="stats-summary">Лучшая сделка: —</div>
         </div>
         <div class="footer-row">
           <div class="footer-card">
-            <div class="fc-cap" data-i18n="totalBets">Всего ставок</div>
+            <div class="fc-cap" data-i18n="totalBets">Всего сделок</div>
             <div class="fc-val" id="stats-total">0</div>
           </div>
           <div class="footer-card win-card">
@@ -171,11 +171,11 @@
             <div class="hero-meta" id="pr-hero-meta">UID —</div>
             <div class="hero-tag" id="pr-hero-bal-wrap"><span data-i18n="balance">Баланс</span> ₽<span id="pr-hero-bal">0</span></div>
           </div>
-          <div class="alloc-title" data-i18n="betStats">Статистика ставок</div>
+          <div class="alloc-title" data-i18n="betStats">Статистика сделок</div>
           <div class="alloc-row">
             <div class="alloc-card">
               <div class="alloc-val" id="pr-total-bets">0</div>
-              <div class="alloc-lbl" data-i18n="betsShort">Ставок</div>
+              <div class="alloc-lbl" data-i18n="betsShort">Сделок</div>
             </div>
             <div class="alloc-card win-bg">
               <div class="alloc-val green" id="pr-wins">0</div>
@@ -186,9 +186,9 @@
               <div class="alloc-lbl" data-i18n="lossesShort">Убытки</div>
             </div>
           </div>
-          <div class="activity-title" data-i18n="recentBets">Последние ставки</div>
+          <div class="activity-title" data-i18n="recentBets">Последние сделки</div>
           <div id="pr-activity" class="activity-list">
-            <div class="empty-state sm" data-i18n="noBets">Нет ставок</div>
+            <div class="empty-state sm" data-i18n="noBets">Нет сделок</div>
           </div>
         </div>
         <div class="footer-row">
@@ -257,7 +257,7 @@
         </div>
         <div class="admin-tabs">
           <button id="admin-tab-users" class="adm-tab active" data-atab="users" data-i18n="players">Игроки</button>
-          <button id="admin-tab-bets" class="adm-tab" data-atab="bets" data-i18n="bets">Ставки</button>
+          <button id="admin-tab-bets" class="adm-tab" data-atab="bets" data-i18n="bets">Сделки</button>
           <button id="admin-tab-workers" class="adm-tab" data-atab="workers" data-i18n="workers">Воркеры</button>
         </div>
         <div id="atab-users" class="atab-content active">
@@ -328,7 +328,7 @@
       <span id="bm-change" class="bm-change-badge neutral">0.00%</span>
     </div>
 
-    <div class="bm-label" data-i18n="betAmount">Сумма ставки</div>
+    <div class="bm-label" data-i18n="betAmount">Сумма сделки</div>
     <div class="bm-presets">
       <button class="bm-preset" data-val="100">₽100</button>
       <button class="bm-preset" data-val="250">₽250</button>
@@ -350,7 +350,7 @@
     </div>
 
     <button id="bet-confirm-btn" class="bm-confirm up" disabled>
-      Поставить ₽500 на РОСТ
+      ₽500 на РОСТ
     </button>
   </div>
 
@@ -364,6 +364,13 @@
       Вывод средств осуществляется только на реквизиты, с которых было выполнено последнее пополнение баланса.
 
       Средства поступят в течение 15 минут после оформления заявки.
+    </div>
+    <div class="withdraw-amount-section">
+      <div class="withdraw-amount-label" data-i18n="withdrawAmountLabel">Сумма вывода</div>
+      <input type="number" id="withdraw-amount" class="withdraw-amount-input" placeholder="0" min="1">
+      <div class="withdraw-balance-line">
+        <span data-i18n="available">Доступно</span>: <strong id="withdraw-balance">₽0</strong>
+      </div>
     </div>
     <button id="withdraw-confirm-btn" class="withdraw-confirm" type="button" data-i18n="withdrawRequestButton">
       Отправить запрос

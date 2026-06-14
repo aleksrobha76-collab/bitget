@@ -404,7 +404,7 @@ class JsonUserStorage:
                 int(bet["telegram_id"]) == int(telegram_id) and bet["status"] == "pending"
                 for bet in bets
             ):
-                raise ValueError("Нельзя менять валюту, пока активна ставка.")
+                raise ValueError("Нельзя менять валюту, пока активна сделка.")
             previous_currency = normalize_currency(users[tid].get("currency"))
             previous_balance = round(float(users[tid].get("balance", 0.0)), 2)
             next_balance = convert_currency_amount(
@@ -1023,7 +1023,7 @@ class PostgresUserStorage:
                 (int(telegram_id),),
             ).fetchone()
             if active is not None:
-                raise ValueError("Нельзя менять валюту, пока активна ставка.")
+                raise ValueError("Нельзя менять валюту, пока активна сделка.")
             previous_currency = normalize_currency(user.get("currency"))
             previous_balance = round(float(user.get("balance") or 0.0), 2)
             next_balance = convert_currency_amount(

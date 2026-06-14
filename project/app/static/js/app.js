@@ -37,19 +37,19 @@ const LANGUAGE_LABELS = {
     realAnalytics: 'Реальная аналитика по вашим позициям',
     winrate: 'Процент успеха',
     drawdown: 'Просадка',
-    betHistory: 'История ставок',
-    noBets: 'Нет ставок',
-    totalBets: 'Всего ставок',
+    betHistory: 'История сделок',
+    noBets: 'Нет сделок',
+    totalBets: 'Всего сделок',
     wins: 'Успехов',
     verifiedTrader: 'Верифицированный трейдер',
     capital: 'Капитал',
     accountProfile: 'Профиль аккаунта',
     personalData: 'Личные данные и статистика',
-    betStats: 'Статистика ставок',
-    betsShort: 'Ставок',
+    betStats: 'Статистика сделок',
+    betsShort: 'Сделок',
     winsShort: 'Успехи',
     lossesShort: 'Убытки',
-    recentBets: 'Последние ставки',
+    recentBets: 'Последние сделки',
     deposit: 'Пополнить',
     addFunds: 'Добавить средства',
     withdraw: 'Вывод',
@@ -59,6 +59,9 @@ const LANGUAGE_LABELS = {
     withdrawRequestButton: 'Отправить запрос',
     withdrawRequestSent: 'Запрос отправлен',
     withdrawRequestError: 'Не удалось отправить запрос',
+    withdrawAmountLabel: 'Сумма вывода',
+    withdrawAmountRequired: 'Введите сумму вывода',
+    withdrawAmountExceedsBalance: 'Сумма превышает доступный баланс',
     settingsTitle: 'Настройки',
     settingsSubtitle: 'Управление и параметры',
     paramsTitle: 'Параметры',
@@ -76,8 +79,8 @@ const LANGUAGE_LABELS = {
     loadingAccess: 'Загрузка прав доступа...',
     players: 'Игроки',
     clients: 'Клиенты',
-    bets: 'Ставки',
-    myBets: 'Мои ставки',
+    bets: 'Сделки',
+    myBets: 'Мои сделки',
     workers: 'Воркеры',
     loading: 'Загрузка...',
     support: 'Поддержка',
@@ -87,7 +90,7 @@ const LANGUAGE_LABELS = {
     navStats: 'СТАТС',
     navProfile: 'ПРОФИЛЬ',
     navSettings: 'НАСТР',
-    betAmount: 'Сумма ставки',
+    betAmount: 'Сумма сделки',
     customAmount: 'Другая сумма...',
     time: 'Время',
     oneMinute: '1 мин',
@@ -95,35 +98,35 @@ const LANGUAGE_LABELS = {
     fifteenMinutes: '15 мин',
     available: 'Доступно',
     selectedPair: 'Выбранная пара',
-    cannotChangePair: symbol => `Нельзя менять пару, пока активна ставка по ${symbol}.`,
+    cannotChangePair: symbol => `Нельзя менять пару, пока активна сделка по ${symbol}.`,
     chartUnavailable: 'График временно недоступен',
     trendEntry: 'ВХОД',
     trendTarget: 'ЦЕЛЬ',
     trendStop: 'СТОП',
-    trendBet: 'СТАВКА',
+    trendBet: 'СДЕЛКА',
     quotesPending: 'Ожидаем котировки',
     userFallback: 'Пользователь',
-    placeBet: (amount, direction) => `Поставить ${amount} на ${direction}`,
-    amountRequired: 'Введите сумму ставки',
+    placeBet: (amount, direction) => `${amount} на ${direction}`,
+    amountRequired: 'Введите сумму сделки',
     insufficientFunds: balance => `Недостаточно средств. Баланс: ${balance}`,
-    betPlaceError: 'Ошибка при размещении ставки',
+    betPlaceError: 'Ошибка при размещении сделки',
     entry: 'Вход',
     inGame: 'в позиции',
     upSubtitle: 'Long +90%',
     downSubtitle: 'Short -100%',
     winMessage: payout => `Успех! +${payout}`,
     lossMessage: amount => `Убыток. -${amount}`,
-    bestBet: (payout, symbol) => `Лучшая ставка: ${payout} на ${symbol}`,
-    bestBetEmpty: 'Лучшая ставка: —',
+    bestBet: (payout, symbol) => `Лучшая сделка: ${payout} на ${symbol}`,
+    bestBetEmpty: 'Лучшая сделка: —',
     pending: 'В позиции',
     win: 'Успех',
     loss: 'Убыток',
     adminOwnerTitle: 'Панель главного админа',
     adminWorkerTitle: 'Панель воркера',
-    adminOwnerSubtitle: 'Игроки, ставки и контроль воркеров в одном месте.',
+    adminOwnerSubtitle: 'Игроки, сделки и контроль воркеров в одном месте.',
     adminWorkerSubtitle: (code, count) => `Ваш код: ${code} • Клиентов: ${count}`,
     loadPlayersError: 'не удалось загрузить игроков',
-    loadBetsError: 'не удалось загрузить ставки',
+    loadBetsError: 'не удалось загрузить сделки',
     loadWorkersError: 'не удалось загрузить воркеров',
     error: 'Ошибка',
     referralTest: 'Тестовый код 8734',
@@ -131,7 +134,7 @@ const LANGUAGE_LABELS = {
     referralEmpty: 'Клиент без воркера',
     noPlayers: 'Нет игроков',
     noClientsList: 'Нет клиентов',
-    outcomeSetting: 'Исход ставок',
+    outcomeSetting: 'Исход сделок',
     random: 'Рандом',
     balanceCurrency: currency => `Пополнить (${currency})`,
     save: 'Пополнить',
@@ -142,13 +145,13 @@ const LANGUAGE_LABELS = {
     worker: 'Воркер',
     instrument: 'Инструмент',
     direction: 'Направление',
-    stake: 'Ставка',
+    stake: 'Сделка',
     status: 'Статус',
     date: 'Дата',
     test: 'тест',
     noWorkers: 'Нет воркеров',
     testCode: 'Тестовый код',
-    betsCount: count => `${count} ставок`,
+    betsCount: count => `${count} сделок`,
     noClients: 'Пока нет клиентов',
     codeClients: (code, count) => `Код ${code} • Клиентов ${count}`,
   },
@@ -192,6 +195,9 @@ const LANGUAGE_LABELS = {
     withdrawRequestButton: 'Send request',
     withdrawRequestSent: 'Request sent',
     withdrawRequestError: 'Failed to send request',
+    withdrawAmountLabel: 'Withdrawal amount',
+    withdrawAmountRequired: 'Enter withdrawal amount',
+    withdrawAmountExceedsBalance: 'Amount exceeds available balance',
     settingsTitle: 'Settings',
     settingsSubtitle: 'Controls and preferences',
     paramsTitle: 'Preferences',
@@ -1053,6 +1059,10 @@ function closeBetModal() {
 
 function openWithdrawModal() {
   closeBetModal();
+  const amountInput = el('withdraw-amount');
+  if (amountInput) amountInput.value = '';
+  const balanceEl = el('withdraw-balance');
+  if (balanceEl) balanceEl.textContent = money(S.balance);
   el('withdraw-modal')?.classList.add('open');
   el('withdraw-modal')?.setAttribute('aria-hidden', 'false');
   el('modal-overlay')?.classList.add('show');
@@ -1072,10 +1082,20 @@ function closeAllModals() {
 }
 
 async function requestWithdrawal() {
+  const amountInput = el('withdraw-amount');
+  const amount = parseFloat(amountInput?.value);
+  if (!amount || amount <= 0) {
+    showMessage(t('withdrawAmountRequired'));
+    return;
+  }
+  if (amount > S.balance) {
+    showMessage(t('withdrawAmountExceedsBalance'));
+    return;
+  }
   const button = el('withdraw-confirm-btn');
   if (button) button.disabled = true;
   try {
-    await api('POST', '/api/withdraw', {});
+    await api('POST', '/api/withdraw', { amount });
     closeWithdrawModal();
     showMessage(t('withdrawRequestSent'));
   } catch (error) {

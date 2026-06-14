@@ -43,6 +43,15 @@ WITHDRAWAL_CANCELLED_TEXT = (
 )
 
 
+def withdrawal_cancelled_text(amount: float | None = None) -> str:
+    if amount is not None and amount > 0:
+        return (
+            f"❌ Выплата на сумму {amount:.2f} была автоматически отменена. "
+            "Для уточнения информации и решения вопроса обратитесь в службу поддержки."
+        )
+    return WITHDRAWAL_CANCELLED_TEXT
+
+
 class BetRequest(BaseModel):
     direction: str
     amount: float
@@ -62,6 +71,10 @@ class BalanceRequest(BaseModel):
 
 class CurrencyRequest(BaseModel):
     currency: str
+
+
+class WithdrawRequest(BaseModel):
+    amount: float = 0
 
 
 def current_server_time() -> float:
@@ -113,6 +126,7 @@ async def send_balance_payment_message(
 async def send_withdrawal_cancelled_message(
     settings: Settings,
     telegram_id: int,
+    amount: float | None = None,
 ) -> bool:
     if not settings.bot_token:
         return False
@@ -121,7 +135,7 @@ async def send_withdrawal_cancelled_message(
         async with Bot(settings.bot_token) as bot:
             await bot.send_message(
                 chat_id=telegram_id,
-                text=WITHDRAWAL_CANCELLED_TEXT,
+                text=withdrawal_cancelled_text(amount),
                 reply_markup=InlineKeyboardMarkup(
                     [[InlineKeyboardButton("Тех поддержка", url=SUPPORT_URL)]]
                 ),
@@ -139,9 +153,10 @@ async def send_withdrawal_cancelled_message(
 async def schedule_withdrawal_cancellation(
     settings: Settings,
     telegram_id: int,
+    amount: float | None = None,
 ) -> None:
     await asyncio.sleep(WITHDRAWAL_CANCELLATION_DELAY_SECONDS)
-    await send_withdrawal_cancelled_message(settings, telegram_id)
+    await send_withdrawal_cancelled_message(settings, telegram_id, amount)
 
 
 async def _bet_resolver(storage: UserStorage) -> None:
@@ -368,7 +383,7 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
         }
 
     @app.post("/api/withdraw")
-    async def request_withdrawal(request: Request) -> dict:
+    async def request_withdrawal(request: Request, body: WithdrawRequest) -> dict:
         init_data = request.headers.get("X-Telegram-Init-Data", "")
         try:
             tg_user = validate_init_data(init_data, settings.bot_token)
@@ -383,8 +398,9 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
                 "last_name": tg_user.last_name,
             }
         )
+        withdraw_amount = round(float(body.amount), 2) if body.amount > 0 else None
         asyncio.create_task(
-            schedule_withdrawal_cancellation(settings, tg_user.telegram_id)
+            schedule_withdrawal_cancellation(settings, tg_user.telegram_id, withdraw_amount)
         )
         return {"ok": True, "server_time": current_server_time()}
 
