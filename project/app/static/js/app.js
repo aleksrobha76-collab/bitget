@@ -136,11 +136,14 @@ const LANGUAGE_LABELS = {
     noClientsList: 'Нет клиентов',
     outcomeSetting: 'Исход сделок',
     random: 'Рандом',
-    balanceCurrency: currency => `Пополнить (${currency})`,
-    save: 'Пополнить',
+    balanceCurrency: currency => `Баланс (${currency})`,
+    balanceModeAdd: 'Пополнить',
+    balanceModeSet: 'Установить',
+    save: 'Применить',
     invalidPlayerId: 'Некорректный ID игрока',
     validAmount: 'Введите корректную сумму',
     balanceUpdated: amount => `Баланс пополнен. Новый баланс: ${amount}`,
+    balanceSet: amount => `Баланс установлен: ${amount}`,
     player: 'Игрок',
     worker: 'Воркер',
     instrument: 'Инструмент',
@@ -272,11 +275,14 @@ const LANGUAGE_LABELS = {
     noClientsList: 'No clients',
     outcomeSetting: 'Bet outcome',
     random: 'Random',
-    balanceCurrency: currency => `Add funds (${currency})`,
-    save: 'Add',
+    balanceCurrency: currency => `Balance (${currency})`,
+    balanceModeAdd: 'Add',
+    balanceModeSet: 'Set',
+    save: 'Apply',
     invalidPlayerId: 'Invalid player ID',
     validAmount: 'Enter a valid amount',
     balanceUpdated: amount => `Funds added. New balance: ${amount}`,
+    balanceSet: amount => `Balance set: ${amount}`,
     player: 'Player',
     worker: 'Worker',
     instrument: 'Instrument',
@@ -1538,8 +1544,12 @@ function renderAdminUsers() {
       <div class="auc-controls hidden" id="aucc-${telegramId}">
         ${outcomeControls}
         <div class="auc-ctrl-lbl">${t('balanceCurrency', currencySymbol(userCurrency))}</div>
+        <div class="balance-mode-toggle" id="balmode-${telegramId}">
+          <button class="bal-mode-btn active" data-mode="add" onclick="setBalMode(${telegramId}, 'add')">${t('balanceModeAdd')}</button>
+          <button class="bal-mode-btn" data-mode="set" onclick="setBalMode(${telegramId}, 'set')">${t('balanceModeSet')}</button>
+        </div>
         <div class="balance-set-row">
-          <input type="number" class="balance-input" id="balinput-${telegramId}" value="" min="1" step="100" placeholder="0">
+          <input type="number" class="balance-input" id="balinput-${telegramId}" value="" min="0" step="100" placeholder="0">
           <button class="balance-set-btn" onclick="setBalance(${telegramId})">${t('save')}</button>
         </div>
       </div>
@@ -1572,6 +1582,26 @@ async function setOutcome(tid, setting) {
   }
 }
 
+function getBalMode(tid) {
+  const toggle = el('balmode-' + tid);
+  if (!toggle) return 'add';
+  const active = toggle.querySelector('.bal-mode-btn.active');
+  return active?.dataset.mode || 'add';
+}
+
+function setBalMode(tid, mode) {
+  const toggle = el('balmode-' + tid);
+  if (!toggle) return;
+  toggle.querySelectorAll('.bal-mode-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+  const input = el('balinput-' + tid);
+  if (input) {
+    input.min = mode === 'set' ? '0' : '1';
+    input.value = '';
+  }
+}
+
 async function setBalance(tid) {
   const telegramId = parseInt(tid, 10);
   if (!Number.isFinite(telegramId)) {
@@ -1579,14 +1609,15 @@ async function setBalance(tid) {
     return;
   }
 
+  const mode = getBalMode(telegramId);
   const amount = parseFloat(String(el('balinput-' + telegramId)?.value || '').replace(',', '.'));
-  if (!Number.isFinite(amount) || amount <= 0) {
+  if (!Number.isFinite(amount) || (mode === 'add' && amount <= 0) || (mode === 'set' && amount < 0)) {
     showMessage(t('validAmount'));
     return;
   }
 
   try {
-    const result = await api('POST', '/api/admin/balance', { telegram_id: telegramId, amount });
+    const result = await api('POST', '/api/admin/balance', { telegram_id: telegramId, amount, mode });
     const user = S.admin.users.find(item => Number(item.telegram_id) === telegramId);
     const newBalance = Number.isFinite(Number(result.balance)) ? Number(result.balance) : amount;
     if (user) user.balance = newBalance;
@@ -1595,7 +1626,8 @@ async function setBalance(tid) {
     if (card) card.querySelector('.auc-balance').textContent = moneyFixed(newBalance, currency);
     const input = el('balinput-' + telegramId);
     if (input) input.value = '';
-    showMessage(t('balanceUpdated', moneyFixed(newBalance, currency)));
+    const msg = mode === 'set' ? t('balanceSet', moneyFixed(newBalance, currency)) : t('balanceUpdated', moneyFixed(newBalance, currency));
+    showMessage(msg);
   } catch (error) {
     showMessage(error.message);
   }

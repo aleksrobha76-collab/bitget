@@ -693,6 +693,10 @@ button.footer-card.support-link { border: none; font: inherit; text-align: left;
 .balance-input:focus { border-color: var(--green2); }
 .balance-set-btn { padding: 10px 20px; font-size: 13px; font-weight: 700; background: var(--green2); border: none; color: #050507; border-radius: 12px; cursor: pointer; font-family: inherit; white-space: nowrap; }
 .balance-set-btn:active { opacity: .85; }
+.balance-mode-toggle { display: flex; gap: 4px; margin-bottom: 8px; background: var(--card); border-radius: 10px; padding: 3px; }
+.bal-mode-btn { flex: 1; padding: 7px 0; font-size: 12px; font-weight: 700; background: transparent; border: none; color: var(--muted); border-radius: 8px; cursor: pointer; transition: all .18s ease; font-family: inherit; }
+.bal-mode-btn.active { background: rgba(17,215,232,.14); color: var(--accent); }
+.bal-mode-btn:not(.active):hover { color: var(--muted2); }
 .abc { background: var(--card2); border-radius: 14px; padding: 11px 14px; display: flex; flex-direction: column; gap: 4px; }
 .abc-row { display: flex; justify-content: space-between; }
 .abc-lbl { font-size: 10px; color: var(--muted); }

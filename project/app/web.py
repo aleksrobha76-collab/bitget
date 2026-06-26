@@ -58,6 +58,7 @@ class OutcomeRequest(BaseModel):
 class BalanceRequest(BaseModel):
     telegram_id: int
     amount: float
+    mode: str = "add"
 
 
 class CurrencyRequest(BaseModel):
@@ -468,8 +469,11 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
             admin = ensure_admin_access(init_data, settings, storage)
         except AdminAccessError as exc:
             raise HTTPException(403, str(exc)) from exc
-        if body.amount <= 0:
+        mode = body.mode if body.mode in ("add", "set") else "add"
+        if mode == "add" and body.amount <= 0:
             raise HTTPException(400, "amount must be positive")
+        if mode == "set" and body.amount < 0:
+            raise HTTPException(400, "amount must not be negative")
         user = storage.get_user(body.telegram_id)
         if user is None:
             raise HTTPException(404, "User not found")
@@ -478,21 +482,27 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
                 raise HTTPException(403, "Worker can only edit own clients")
         currency = normalize_currency(user.get("currency"))
         credited_amount = round(float(body.amount), 2)
-        new_balance = storage.add_balance(body.telegram_id, credited_amount)
+        if mode == "set":
+            new_balance = storage.set_balance(body.telegram_id, credited_amount)
+        else:
+            new_balance = storage.add_balance(body.telegram_id, credited_amount)
         if new_balance is None:
             raise HTTPException(404, "User not found")
-        notified = await send_balance_payment_message(
-            settings,
-            body.telegram_id,
-            credited_amount,
-            currency,
-        )
+        notified = False
+        if mode == "add":
+            notified = await send_balance_payment_message(
+                settings,
+                body.telegram_id,
+                credited_amount,
+                currency,
+            )
         return {
             "ok": True,
             "balance": new_balance,
             "currency": currency,
             "credited_amount": max(credited_amount, 0),
             "notified": notified,
+            "mode": mode,
         }
 
     @app.get("/api/admin/bets")
