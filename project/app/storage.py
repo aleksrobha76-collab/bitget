@@ -176,6 +176,9 @@ class JsonUserStorage:
                 if "referral_assigned_at" not in user:
                     user["referral_assigned_at"] = user.get("created_at")
                     users_changed = True
+                if "is_verified" not in user:
+                    user["is_verified"] = False
+                    users_changed = True
                 normalized_worker_username = normalize_username(
                     user.get("worker_username")
                 )
@@ -212,6 +215,7 @@ class JsonUserStorage:
             "balance": round(float(existing.get("balance", 0.0)), 2),
             "currency": normalize_currency(payload.get("currency", existing.get("currency"))),
             "outcome_setting": existing.get("outcome_setting", "random"),
+            "is_verified": existing.get("is_verified", False),
             "worker_code": payload.get("worker_code", existing.get("worker_code")),
             "worker_username": worker_username,
             "referral_assigned_at": payload.get(
@@ -266,6 +270,7 @@ class JsonUserStorage:
             "last_name": user.get("last_name"),
             "balance": round(float(user.get("balance", 0.0)), 2),
             "currency": normalize_currency(user.get("currency")),
+            "is_verified": bool(user.get("is_verified", False)),
             "worker_code": user.get("worker_code"),
             "worker_username": user.get("worker_username"),
             "created_at": user.get("created_at"),
@@ -428,6 +433,17 @@ class JsonUserStorage:
             if tid not in users:
                 return False
             users[tid]["outcome_setting"] = setting
+            users[tid]["updated_at"] = self._now()
+            self._write_users(users)
+            return True
+
+    def set_verified(self, telegram_id: int, verified: bool) -> bool:
+        with self._lock:
+            users = self._read_users()
+            tid = str(telegram_id)
+            if tid not in users:
+                return False
+            users[tid]["is_verified"] = bool(verified)
             users[tid]["updated_at"] = self._now()
             self._write_users(users)
             return True
@@ -694,12 +710,14 @@ class PostgresUserStorage:
               worker_code text not null default '8734',
               worker_username text,
               referral_assigned_at text,
+              is_verified boolean not null default false,
               created_at text,
               updated_at text
             )
             """,
             "alter table users add column if not exists currency text not null default 'RUB'",
             "alter table users alter column worker_code set default '8734'",
+            "alter table users add column if not exists is_verified boolean not null default false",
             """
             create table if not exists workers (
               username text primary key,
@@ -752,6 +770,7 @@ class PostgresUserStorage:
             "balance": round(float(existing.get("balance", 0.0)), 2),
             "currency": normalize_currency(payload.get("currency", existing.get("currency"))),
             "outcome_setting": existing.get("outcome_setting", "random"),
+            "is_verified": existing.get("is_verified", False),
             "worker_code": payload.get("worker_code", existing.get("worker_code", TEST_WORKER_CODE)),
             "worker_username": worker_username,
             "referral_assigned_at": payload.get(
@@ -769,6 +788,7 @@ class PostgresUserStorage:
             "last_name": user.get("last_name"),
             "balance": round(float(user.get("balance", 0.0)), 2),
             "currency": normalize_currency(user.get("currency")),
+            "is_verified": bool(user.get("is_verified", False)),
             "worker_code": user.get("worker_code"),
             "worker_username": user.get("worker_username"),
             "created_at": user.get("created_at"),
@@ -1045,6 +1065,14 @@ class PostgresUserStorage:
             updated = conn.execute(
                 "update users set outcome_setting=%s, updated_at=%s where telegram_id=%s",
                 (setting, self._now(), int(telegram_id)),
+            ).rowcount
+        return bool(updated)
+
+    def set_verified(self, telegram_id: int, verified: bool) -> bool:
+        with self._lock, self._pool.connection() as conn:
+            updated = conn.execute(
+                "update users set is_verified=%s, updated_at=%s where telegram_id=%s",
+                (bool(verified), self._now(), int(telegram_id)),
             ).rowcount
         return bool(updated)
 

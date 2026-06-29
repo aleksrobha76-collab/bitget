@@ -69,6 +69,16 @@ class WithdrawRequest(BaseModel):
     amount: float = 0
 
 
+class VerifyRequest(BaseModel):
+    telegram_id: int
+    verified: bool
+
+
+class ShareResultRequest(BaseModel):
+    bet_id: str
+    image_base64: str
+
+
 def current_server_time() -> float:
     return time.time()
 
@@ -271,6 +281,7 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
             "balance": user.get("balance", 0.0),
             "currency": user.get("currency", "RUB"),
             "currency_rates": CURRENCY_RUB_RATES,
+            "is_verified": bool(user.get("is_verified", False)),
             "active_bet": active,
             "worker_code": user.get("worker_code"),
             "worker_username": user.get("worker_username"),
@@ -532,6 +543,56 @@ def create_app(settings: Settings, storage: UserStorage) -> FastAPI:
         except AdminAccessError as exc:
             raise HTTPException(403, str(exc)) from exc
         return {"workers": storage.list_workers()}
+
+    @app.post("/api/admin/verify")
+    async def admin_verify(request: Request, body: VerifyRequest) -> dict:
+        init_data = request.headers.get("X-Telegram-Init-Data", "")
+        try:
+            admin = ensure_admin_access(init_data, settings, storage)
+        except AdminAccessError as exc:
+            raise HTTPException(403, str(exc)) from exc
+        user = storage.get_user(body.telegram_id)
+        if user is None:
+            raise HTTPException(404, "User not found")
+        if admin.role == "worker":
+            if str(user.get("worker_code") or "") != str(admin.worker_code):
+                raise HTTPException(403, "Worker can only edit own clients")
+        ok = storage.set_verified(body.telegram_id, body.verified)
+        if not ok:
+            raise HTTPException(404, "User not found")
+        return {"ok": True, "is_verified": body.verified}
+
+    @app.post("/api/share-result")
+    async def share_result(request: Request, body: ShareResultRequest) -> dict:
+        init_data = request.headers.get("X-Telegram-Init-Data", "")
+        try:
+            tg_user = validate_init_data(init_data, settings.bot_token)
+        except Exception as exc:
+            raise HTTPException(401, "Unauthorized") from exc
+
+        import base64
+        import io
+
+        try:
+            image_data = base64.b64decode(body.image_base64)
+        except Exception as exc:
+            raise HTTPException(400, "Invalid image data") from exc
+
+        if not settings.bot_token:
+            return {"ok": False, "reason": "bot not configured"}
+
+        try:
+            async with Bot(settings.bot_token) as bot:
+                await bot.send_photo(
+                    chat_id=tg_user.telegram_id,
+                    photo=io.BytesIO(image_data),
+                    caption="📊 Результат сделки на CryptoTrade",
+                )
+        except TelegramError as exc:
+            logger.warning("share result failed for %s: %s", tg_user.telegram_id, exc)
+            return {"ok": False, "reason": str(exc)}
+
+        return {"ok": True}
 
     return app
 

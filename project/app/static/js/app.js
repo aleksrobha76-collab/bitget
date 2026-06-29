@@ -8,10 +8,11 @@ const POPULAR_MARKETS = [
 
 const DEFAULT_MARKET_SYMBOL = POPULAR_MARKETS[0].symbol;
 const CURRENCY_OPTIONS = {
-  RUB: { symbol: '₽', rubRate: 1 },
-  USD: { symbol: '$', rubRate: 90 },
-  BYN: { symbol: 'Br', rubRate: 30 },
+  RUB: { symbol: '₽', rubRate: 1, flag: '🇷🇺' },
+  USD: { symbol: '$', rubRate: 90, flag: '🇺🇸' },
+  BYN: { symbol: 'Br', rubRate: 30, flag: '🇧🇾' },
 };
+const LANGUAGE_FLAGS = { ru: '🇷🇺', en: '🇺🇸' };
 const DEFAULT_CURRENCY = 'RUB';
 const MARKET_STORAGE_KEY = 'cryptotrade:selectedSymbol';
 const LANGUAGE_STORAGE_KEY = 'cryptotrade:language';
@@ -157,6 +158,20 @@ const LANGUAGE_LABELS = {
     betsCount: count => `${count} сделок`,
     noClients: 'Пока нет клиентов',
     codeClients: (code, count) => `Код ${code} • Клиентов ${count}`,
+    verified: 'Верифицирован',
+    notVerified: 'Не верифицирован',
+    verification: 'Верификация',
+    shareResult: 'Поделиться',
+    sendToChat: 'Отправить в чат',
+    close: 'Закрыть',
+    tradeSuccess: 'Успешная сделка!',
+    tradeLoss: 'Сделка закрыта',
+    profit: 'Прибыль',
+    lossLabel: 'Убыток',
+    entryPrice: 'Вход',
+    exitPrice: 'Выход',
+    shareSent: 'Карточка отправлена в чат!',
+    shareError: 'Не удалось отправить',
   },
   en: {
     documentLang: 'en',
@@ -296,6 +311,20 @@ const LANGUAGE_LABELS = {
     betsCount: count => `${count} bets`,
     noClients: 'No clients yet',
     codeClients: (code, count) => `Code ${code} • Clients ${count}`,
+    verified: 'Verified',
+    notVerified: 'Not verified',
+    verification: 'Verification',
+    shareResult: 'Share',
+    sendToChat: 'Send to chat',
+    close: 'Close',
+    tradeSuccess: 'Successful trade!',
+    tradeLoss: 'Trade closed',
+    profit: 'Profit',
+    lossLabel: 'Loss',
+    entryPrice: 'Entry',
+    exitPrice: 'Exit',
+    shareSent: 'Card sent to chat!',
+    shareError: 'Failed to send',
   },
 };
 
@@ -305,6 +334,7 @@ const S = {
   user: null,
   balance: 0,
   currency: DEFAULT_CURRENCY,
+  isVerified: false,
   isAdmin: false,
   page: 'home',
   clock: { offsetMs: 0, syncedAt: 0 },
@@ -334,6 +364,7 @@ const S = {
     direction: 'up',
     keyboardOpen: false,
   },
+  lastResolvedBet: null,
 };
 
 async function requestJson(path, options = {}) {
@@ -494,13 +525,8 @@ function applyStaticTranslations() {
 function renderLanguageUI() {
   const labels = LANGUAGE_LABELS[S.language] || LANGUAGE_LABELS[DEFAULT_LANGUAGE];
   document.documentElement.lang = labels.documentLang;
-  const select = el('language-select');
-  if (select) {
-    select.value = S.language;
-    select.setAttribute('aria-label', labels.selectAria);
-  }
-  const currencySelect = el('currency-select');
-  if (currencySelect) currencySelect.value = S.currency;
+  syncCustomDropdown('lang', S.language, LANGUAGE_FLAGS[S.language] || '🌐', labels['language' + (S.language === 'ru' ? 'Russian' : 'English')]);
+  syncCustomDropdown('cur', S.currency, CURRENCY_OPTIONS[S.currency]?.flag || '💱', S.currency);
   applyStaticTranslations();
   renderPresetAmounts();
   renderBetButtonLabels();
@@ -549,7 +575,7 @@ async function setAccountCurrency(currency) {
 }
 
 function renderCurrencyUI() {
-  if (el('currency-select')) el('currency-select').value = S.currency;
+  syncCustomDropdown('cur', S.currency, CURRENCY_OPTIONS[S.currency]?.flag || '💱', S.currency);
   renderBalance();
   renderPresetAmounts();
   updateTrendStrip();
@@ -669,6 +695,7 @@ async function init() {
     const me = await api('GET', '/api/me');
     S.user = me;
     S.balance = me.balance ?? 0;
+    S.isVerified = Boolean(me.is_verified);
     syncCurrencyRates(me.currency_rates);
     S.currency = normalizeCurrency(me.currency);
     renderCurrencyUI();
@@ -700,13 +727,15 @@ el('pair-chip')?.addEventListener('click', event => {
   togglePairMenu();
 });
 
-el('language-select')?.addEventListener('change', event => {
-  setLanguage(event.target.value);
+// Custom dropdown for language
+initCustomDropdown('lang', value => {
+  setLanguage(value);
   S.tg?.HapticFeedback?.selectionChanged();
 });
 
-el('currency-select')?.addEventListener('change', event => {
-  setAccountCurrency(event.target.value);
+// Custom dropdown for currency
+initCustomDropdown('cur', value => {
+  setAccountCurrency(value);
 });
 
 document.addEventListener('click', event => {
@@ -817,22 +846,29 @@ function drawChart() {
   const candles = S.chart.candles.slice(-42);
   const paddingLeft = 44;
   const paddingRight = 18;
-  const paddingTop = 10;
-  const paddingBottom = 22;
+
+  // Zone split: candlestick 58%, volume 18%, MACD 24%
+  const candleZoneH = Math.floor(height * 0.58);
+  const volZoneH = Math.floor(height * 0.18);
+  const macdZoneH = height - candleZoneH - volZoneH;
+
+  const candleTop = 10;
+  const candleBottom = candleZoneH - 6;
   const chartWidth = width - paddingLeft - paddingRight;
-  const chartHeight = height - paddingTop - paddingBottom;
+  const candleHeight = candleBottom - candleTop;
 
   const maxPrice = Math.max(...candles.map(item => item.h));
   const minPrice = Math.min(...candles.map(item => item.l));
   const priceRange = Math.max(maxPrice - minPrice, 1);
   const step = chartWidth / Math.max(candles.length, 1);
 
-  const yForPrice = price => paddingTop + chartHeight * (1 - (price - minPrice) / priceRange);
+  const yForPrice = price => candleTop + candleHeight * (1 - (price - minPrice) / priceRange);
 
+  // Grid lines for candlestick zone
   ctx.strokeStyle = '#1c2030';
   ctx.lineWidth = 0.6;
   for (let index = 0; index <= 4; index += 1) {
-    const y = paddingTop + chartHeight * (index / 4);
+    const y = candleTop + candleHeight * (index / 4);
     ctx.beginPath();
     ctx.moveTo(paddingLeft, y);
     ctx.lineTo(width - paddingRight, y);
@@ -844,6 +880,7 @@ function drawChart() {
     ctx.fillText(label, paddingLeft - 4, y + 3);
   }
 
+  // Draw candles
   candles.forEach((candle, index) => {
     const x = paddingLeft + step * index + step / 2;
     const isBull = candle.c >= candle.o;
@@ -863,6 +900,7 @@ function drawChart() {
     ctx.fillRect(x - bodyWidth / 2, bodyTop, bodyWidth, bodyHeight);
   });
 
+  // Current price line
   if (S.chart.price) {
     const priceY = yForPrice(S.chart.price);
     ctx.setLineDash([4, 4]);
@@ -878,6 +916,7 @@ function drawChart() {
     ctx.fillText(fmtPriceShort(S.chart.price), paddingLeft + 8, Math.max(14, priceY - 6));
   }
 
+  // Entry price line for active bet
   if (S.activeBet?.entry_price) {
     const entryY = yForPrice(S.activeBet.entry_price);
     ctx.setLineDash([6, 5]);
@@ -888,6 +927,115 @@ function drawChart() {
     ctx.stroke();
     ctx.setLineDash([]);
   }
+
+  // ── SEPARATOR LINE ──
+  ctx.strokeStyle = '#1c2030';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(paddingLeft, candleZoneH);
+  ctx.lineTo(width - paddingRight, candleZoneH);
+  ctx.stroke();
+
+  // ── VOLUME SUBCHART ──
+  const volTop = candleZoneH + 4;
+  const volBottom = candleZoneH + volZoneH - 4;
+  const volH = volBottom - volTop;
+  const maxVol = Math.max(...candles.map(c => c.v || 0), 1);
+
+  // Volume label
+  ctx.fillStyle = '#3a4050';
+  ctx.font = '8px Inter, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('VOL', paddingLeft - 4, volTop + 9);
+
+  candles.forEach((candle, index) => {
+    const x = paddingLeft + step * index + step / 2;
+    const barH = Math.max(1, (candle.v || 0) / maxVol * volH);
+    const isBull = candle.c >= candle.o;
+    ctx.fillStyle = isBull ? 'rgba(36,246,167,.35)' : 'rgba(255,90,106,.35)';
+    const barW = Math.max(2, step * 0.5);
+    ctx.fillRect(x - barW / 2, volBottom - barH, barW, barH);
+  });
+
+  // ── SEPARATOR LINE 2 ──
+  ctx.strokeStyle = '#1c2030';
+  ctx.beginPath();
+  ctx.moveTo(paddingLeft, candleZoneH + volZoneH);
+  ctx.lineTo(width - paddingRight, candleZoneH + volZoneH);
+  ctx.stroke();
+
+  // ── MACD SUBCHART ──
+  const macdTop = candleZoneH + volZoneH + 4;
+  const macdBottom = height - 4;
+  const macdH = macdBottom - macdTop;
+  const macdMid = macdTop + macdH / 2;
+
+  // Compute MACD from close prices
+  const closes = candles.map(c => c.c);
+  const ema12 = _ema(closes, 12);
+  const ema26 = _ema(closes, 26);
+  const macdLine = ema12.map((v, i) => v - ema26[i]);
+  const signalLine = _ema(macdLine, 9);
+  const histogram = macdLine.map((v, i) => v - signalLine[i]);
+
+  const maxAbs = Math.max(...histogram.map(Math.abs), ...macdLine.map(Math.abs), ...signalLine.map(Math.abs), 0.001);
+
+  const yForMacd = val => macdMid - (val / maxAbs) * (macdH / 2 - 2);
+
+  // MACD label
+  ctx.fillStyle = '#3a4050';
+  ctx.font = '8px Inter, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('MACD', paddingLeft - 4, macdTop + 9);
+
+  // Zero line
+  ctx.strokeStyle = '#1c2030';
+  ctx.lineWidth = 0.5;
+  ctx.beginPath();
+  ctx.moveTo(paddingLeft, macdMid);
+  ctx.lineTo(width - paddingRight, macdMid);
+  ctx.stroke();
+
+  // Histogram bars
+  histogram.forEach((val, index) => {
+    const x = paddingLeft + step * index + step / 2;
+    const barH = Math.abs(yForMacd(val) - macdMid);
+    const barW = Math.max(2, step * 0.4);
+    ctx.fillStyle = val >= 0 ? 'rgba(36,246,167,.4)' : 'rgba(255,90,106,.4)';
+    ctx.fillRect(x - barW / 2, val >= 0 ? macdMid - barH : macdMid, barW, barH);
+  });
+
+  // MACD line
+  ctx.beginPath();
+  ctx.strokeStyle = '#4DD5FF';
+  ctx.lineWidth = 1.2;
+  macdLine.forEach((val, i) => {
+    const x = paddingLeft + step * i + step / 2;
+    if (i === 0) ctx.moveTo(x, yForMacd(val));
+    else ctx.lineTo(x, yForMacd(val));
+  });
+  ctx.stroke();
+
+  // Signal line
+  ctx.beginPath();
+  ctx.strokeStyle = '#FF9F43';
+  ctx.lineWidth = 1;
+  signalLine.forEach((val, i) => {
+    const x = paddingLeft + step * i + step / 2;
+    if (i === 0) ctx.moveTo(x, yForMacd(val));
+    else ctx.lineTo(x, yForMacd(val));
+  });
+  ctx.stroke();
+}
+
+// EMA helper for MACD
+function _ema(data, period) {
+  const k = 2 / (period + 1);
+  const result = [data[0]];
+  for (let i = 1; i < data.length; i++) {
+    result.push(data[i] * k + result[i - 1] * (1 - k));
+  }
+  return result;
 }
 
 
@@ -971,6 +1119,12 @@ function renderUserUI() {
   if (el('pr-name')) el('pr-name').textContent = username;
   if (el('pr-hero-name')) el('pr-hero-name').textContent = username;
   if (el('pr-hero-meta')) el('pr-hero-meta').textContent = 'UID ' + (S.user.telegram_id || '—');
+  // Verification badges
+  const showBadge = S.isVerified;
+  ['hc-verified', 'stats-hc-verified', 'pr-hc-verified'].forEach(id => {
+    const badge = el(id);
+    if (badge) badge.classList.toggle('hidden', !showBadge);
+  });
   renderBalance();
 }
 
@@ -1283,7 +1437,7 @@ async function pollResolution() {
       hideActiveBet();
       enableBetButtons();
       const won = bet.outcome === 'win';
-      showMessage(won ? t('winMessage', moneyFixed(bet.payout, bet.currency || S.currency)) : t('lossMessage', moneyFixed(bet.amount, bet.currency || S.currency)));
+      showTradeResult(bet);
       S.tg?.HapticFeedback?.notificationOccurred(won ? 'success' : 'error');
       updateTrendStrip();
       return;
@@ -1520,6 +1674,7 @@ function renderAdminUsers() {
     const meta = [user.username ? '@' + user.username : null, 'ID ' + telegramId].filter(Boolean).join(' • ');
     const setting = user.outcome_setting || 'random';
     const userCurrency = normalizeCurrency(user.currency);
+    const isVerified = Boolean(user.is_verified);
     const rightMeta = canEditOutcome ? formatOutcome(setting) : t('betsCount', user.bets_count || 0);
     const outcomeControls = canEditOutcome ? `
         <div class="auc-ctrl-lbl">${t('outcomeSetting')}</div>
@@ -1529,10 +1684,17 @@ function renderAdminUsers() {
           <button class="outcome-btn rand ${setting === 'random' ? 'active' : ''}" onclick="setOutcome(${telegramId}, 'random')">${t('random')}</button>
         </div>
     ` : '';
+    const verifyToggle = canEditOutcome ? `
+        <div class="auc-verify-wrap">
+          <button class="auc-verify-toggle ${isVerified ? 'on' : ''}" id="auc-verify-${telegramId}"
+            onclick="setVerified(${telegramId}, ${isVerified ? 'false' : 'true'})"></button>
+          <span class="auc-verify-lbl">${t('verification')}: ${isVerified ? t('verified') : t('notVerified')}</span>
+        </div>
+    ` : '';
     return `<div class="auc" id="auc-${telegramId}">
       <div class="auc-header" onclick="toggleAuc(${telegramId})">
         <div>
-          <div class="auc-name">${name}</div>
+          <div class="auc-name">${name}${isVerified ? '<span class="verified-badge" style="font-size:8px;width:14px;height:14px;margin-left:4px">\u2713</span>' : ''}</div>
           <div class="auc-meta">${esc(meta)}</div>
           <div class="auc-ref">${esc(formatReferralLabel(user))}</div>
         </div>
@@ -1543,6 +1705,7 @@ function renderAdminUsers() {
       </div>
       <div class="auc-controls hidden" id="aucc-${telegramId}">
         ${outcomeControls}
+        ${verifyToggle}
         <div class="auc-ctrl-lbl">${t('balanceCurrency', currencySymbol(userCurrency))}</div>
         <div class="balance-mode-toggle" id="balmode-${telegramId}">
           <button class="bal-mode-btn active" data-mode="add" onclick="setBalMode(${telegramId}, 'add')">${t('balanceModeAdd')}</button>
@@ -1556,6 +1719,7 @@ function renderAdminUsers() {
     </div>`;
   }).join('');
 }
+
 
 function toggleAuc(tid) {
   el('aucc-' + tid)?.classList.toggle('hidden');
@@ -1742,5 +1906,223 @@ function fmtSymbol(symbol) {
   if (!symbol) return '—';
   return symbol.endsWith('USDT') ? `${symbol.slice(0, -4)}/USDT` : symbol;
 }
+
+/* ═══ CUSTOM DROPDOWN ═══ */
+function initCustomDropdown(prefix, onChange) {
+  const wrap = el(prefix + '-dropdown-wrap');
+  const btn = el(prefix + '-dropdown-btn');
+  const menu = el(prefix + '-dropdown-menu');
+  if (!wrap || !btn || !menu) return;
+  btn.addEventListener('click', e => { e.stopPropagation(); wrap.classList.toggle('open'); });
+  menu.querySelectorAll('.cs-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      menu.querySelectorAll('.cs-option').forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      wrap.classList.remove('open');
+      onChange(opt.dataset.val);
+    });
+  });
+  document.addEventListener('click', e => { if (!wrap.contains(e.target)) wrap.classList.remove('open'); });
+}
+function syncCustomDropdown(prefix, value, flag, label) {
+  const wrap = el(prefix + '-dropdown-wrap');
+  const flagEl = el(prefix + '-flag');
+  const labelEl = el(prefix + '-label');
+  const menu = el(prefix + '-dropdown-menu');
+  if (flagEl) flagEl.textContent = flag;
+  if (labelEl) labelEl.textContent = label;
+  if (menu) menu.querySelectorAll('.cs-option').forEach(o => {
+    o.classList.toggle('active', o.dataset.val === value);
+  });
+}
+
+/* ═══ VERIFICATION TOGGLE (admin) ═══ */
+async function setVerified(tid, verified) {
+  try {
+    await api('POST', '/api/admin/verify', { telegram_id: parseInt(tid, 10), verified: Boolean(verified) });
+    const user = S.admin.users.find(u => Number(u.telegram_id) === parseInt(tid, 10));
+    if (user) user.is_verified = verified;
+    const toggle = document.querySelector(`#auc-verify-${tid}`);
+    if (toggle) toggle.classList.toggle('on', verified);
+    S.tg?.HapticFeedback?.selectionChanged();
+  } catch (err) { showMessage(err.message); }
+}
+
+/* ═══ TRADE RESULT OVERLAY ═══ */
+function showTradeResult(bet) {
+  S.lastResolvedBet = bet;
+  const won = bet.outcome === 'win';
+  const overlay = el('trade-result-overlay');
+  const card = el('tr-card');
+  const icon = el('tr-icon');
+  const title = el('tr-title');
+  const pair = el('tr-pair');
+  const pnl = el('tr-pnl');
+  const details = el('tr-details');
+  if (!overlay) return;
+
+  icon.textContent = won ? '✓' : '✕';
+  icon.className = 'tr-icon ' + (won ? 'win' : 'loss');
+  title.textContent = won ? t('tradeSuccess') : t('tradeLoss');
+  title.className = 'tr-title ' + (won ? 'win' : 'loss');
+  card.className = 'tr-card' + (won ? '' : ' loss-card');
+  pair.textContent = fmtSymbol(bet.symbol) + ' • ' + formatDirection(bet.direction, true);
+
+  const cur = bet.currency || S.currency;
+  if (won) {
+    pnl.textContent = '+' + moneyFixed(bet.payout, cur);
+    pnl.className = 'tr-pnl win';
+  } else {
+    pnl.textContent = '-' + moneyFixed(bet.amount, cur);
+    pnl.className = 'tr-pnl loss';
+  }
+  const date = new Date(bet.created_at * 1000).toLocaleString(getLocale(), { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+  details.innerHTML = `${t('entryPrice')}: ${fmtPrice(bet.entry_price)} → ${t('exitPrice')}: ${fmtPrice(bet.exit_price)}<br>${date}`;
+
+  overlay.classList.remove('hidden');
+  overlay.setAttribute('aria-hidden', 'false');
+
+  if (won) startConfetti();
+  else card.classList.add('shake');
+}
+function closeTradeResult() {
+  const overlay = el('trade-result-overlay');
+  if (overlay) { overlay.classList.add('hidden'); overlay.setAttribute('aria-hidden', 'true'); }
+  stopConfetti();
+  const card = el('tr-card');
+  if (card) card.classList.remove('shake');
+}
+el('tr-close-btn')?.addEventListener('click', closeTradeResult);
+el('tr-share-btn')?.addEventListener('click', () => { closeTradeResult(); openShareModal(); });
+
+/* ═══ CONFETTI ═══ */
+let _confettiAnim = null;
+function startConfetti() {
+  const canvas = el('confetti-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+  ctx.scale(dpr, dpr);
+  const W = window.innerWidth, H = window.innerHeight;
+  const colors = ['#11D7E8','#24F6A7','#4DD5FF','#FFCF66','#FF5A6A','#FF6A80','#A78BFA'];
+  const particles = Array.from({ length: 80 }, () => ({
+    x: Math.random() * W, y: Math.random() * H * -1 - 20,
+    w: 4 + Math.random() * 6, h: 6 + Math.random() * 8,
+    vx: (Math.random() - .5) * 3, vy: 2 + Math.random() * 4,
+    rot: Math.random() * 360, vr: (Math.random() - .5) * 8,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    opacity: .7 + Math.random() * .3,
+  }));
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    let alive = false;
+    particles.forEach(p => {
+      if (p.y > H + 20) return;
+      alive = true;
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.vy += .08;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI / 180);
+      ctx.globalAlpha = p.opacity;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    });
+    if (alive) _confettiAnim = requestAnimationFrame(draw);
+  }
+  draw();
+}
+function stopConfetti() {
+  if (_confettiAnim) { cancelAnimationFrame(_confettiAnim); _confettiAnim = null; }
+  const canvas = el('confetti-canvas');
+  if (canvas) { const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height); }
+}
+
+/* ═══ SHARE CARD ═══ */
+function openShareModal() {
+  const bet = S.lastResolvedBet;
+  if (!bet) return;
+  generateShareCard(bet);
+  el('share-card-modal')?.classList.remove('hidden');
+}
+function closeShareModal() {
+  el('share-card-modal')?.classList.add('hidden');
+}
+function generateShareCard(bet) {
+  const canvas = el('share-canvas');
+  if (!canvas) return;
+  const W = 640, H = 400;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const won = bet.outcome === 'win';
+  // Background gradient
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, won ? '#0A2E30' : '#2E0A14');
+  bg.addColorStop(1, '#050507');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  // Decorative circle
+  ctx.beginPath(); ctx.arc(W - 80, 80, 120, 0, Math.PI * 2);
+  ctx.fillStyle = won ? 'rgba(17,215,232,.06)' : 'rgba(255,64,92,.06)'; ctx.fill();
+  // Logo text
+  ctx.fillStyle = '#F6F8FB'; ctx.font = 'bold 14px Inter, sans-serif';
+  ctx.fillText('CryptoTrade', 32, 40);
+  // Symbol
+  ctx.font = 'bold 22px Inter, sans-serif';
+  ctx.fillText(fmtSymbol(bet.symbol), 32, 80);
+  // Direction badge
+  ctx.font = 'bold 13px Inter, sans-serif';
+  ctx.fillStyle = won ? '#11D7E8' : '#FF5A6A';
+  ctx.fillText(formatDirection(bet.direction, true), 32, 108);
+  // PnL
+  ctx.font = 'bold 52px Inter, sans-serif';
+  const cur = bet.currency || S.currency;
+  const pnlText = won ? '+' + moneyFixed(bet.payout, cur) : '-' + moneyFixed(bet.amount, cur);
+  ctx.fillStyle = won ? '#11D7E8' : '#FF5A6A';
+  ctx.fillText(pnlText, 32, 190);
+  // Result label
+  ctx.font = 'bold 16px Inter, sans-serif';
+  ctx.fillStyle = won ? 'rgba(17,215,232,.6)' : 'rgba(255,90,106,.6)';
+  ctx.fillText(won ? t('profit') : t('lossLabel'), 32, 220);
+  // Details
+  ctx.font = '13px Inter, sans-serif'; ctx.fillStyle = '#8F9AAD';
+  ctx.fillText(`${t('entryPrice')}: ${fmtPrice(bet.entry_price)}  →  ${t('exitPrice')}: ${fmtPrice(bet.exit_price)}`, 32, 270);
+  const date = new Date(bet.created_at * 1000).toLocaleString(getLocale(), { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  ctx.fillText(date, 32, 295);
+  // Username
+  if (S.user?.username) {
+    ctx.font = 'bold 13px Inter, sans-serif'; ctx.fillStyle = '#4DD5FF';
+    ctx.fillText('@' + S.user.username, 32, 340);
+  }
+  // Watermark
+  ctx.font = '11px Inter, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.15)';
+  ctx.textAlign = 'right';
+  ctx.fillText('CryptoTrade • Telegram Mini App', W - 32, H - 24);
+  ctx.textAlign = 'left';
+}
+
+el('sc-send-btn')?.addEventListener('click', async () => {
+  const canvas = el('share-canvas');
+  const btn = el('sc-send-btn');
+  if (!canvas || !btn) return;
+  btn.disabled = true;
+  try {
+    const dataUrl = canvas.toDataURL('image/png');
+    const base64 = dataUrl.split(',')[1];
+    const bet = S.lastResolvedBet;
+    if (!bet) return;
+    const result = await api('POST', '/api/share-result', { bet_id: bet.id, image_base64: base64 });
+    if (result.ok) {
+      showMessage(t('shareSent'));
+      closeShareModal();
+    } else {
+      showMessage(t('shareError'));
+    }
+  } catch (err) { showMessage(err.message || t('shareError')); }
+  finally { btn.disabled = false; }
+});
 
 window.addEventListener('DOMContentLoaded', init);

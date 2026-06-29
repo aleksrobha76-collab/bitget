@@ -16,7 +16,11 @@
   <div id="app">
 
     <div id="loading-screen">
-      <div class="spinner"></div>
+      <div class="logo-loader">
+        <div class="logo-loader-img"></div>
+        <div class="logo-loader-ring"></div>
+      </div>
+      <div class="logo-loader-text">CryptoTrade</div>
     </div>
 
     <div id="main-app" class="hidden">
@@ -28,8 +32,8 @@
       <div id="page-home" class="page active">
         <div class="header-card">
           <div class="hc-avatar hc-avatar-logo" id="hc-avatar" aria-hidden="true"></div>
-          <div class="hc-info">
-            <div class="hc-name" id="hc-name">@user</div>
+        <div class="hc-info">
+            <div class="hc-name"><span id="hc-name">@user</span><span id="hc-verified" class="verified-badge hidden" title="Verified">✓</span></div>
             <div class="hc-sub" data-i18n="homePremiumTrader">Премиум трейдер</div>
           </div>
           <div class="hc-balance">
@@ -54,7 +58,9 @@
           <div id="chart-area" class="chart-area">
             <canvas id="chart-canvas"></canvas>
             <div id="chart-loader" class="chart-loader">
-              <div class="spinner sm"></div>
+              <div class="chart-logo-loader">
+                <div class="logo-loader-img sm"></div>
+              </div>
             </div>
           </div>
           <div class="tf-row">
@@ -105,7 +111,7 @@
         <div class="header-card">
           <div class="hc-avatar hc-avatar-logo" aria-hidden="true"></div>
           <div class="hc-info">
-            <div class="hc-name" id="stats-hc-name">@user</div>
+            <div class="hc-name"><span id="stats-hc-name">@user</span><span id="stats-hc-verified" class="verified-badge hidden" title="Verified">✓</span></div>
             <div class="hc-sub" data-i18n="analytics">Аналитика</div>
           </div>
           <div class="hc-balance">
@@ -155,7 +161,7 @@
         <div class="header-card">
           <div class="hc-avatar hc-avatar-logo" aria-hidden="true"></div>
           <div class="hc-info">
-            <div class="hc-name" id="pr-name">Пользователь</div>
+            <div class="hc-name"><span id="pr-name">Пользователь</span><span id="pr-hc-verified" class="verified-badge hidden" title="Verified">✓</span></div>
             <div class="hc-sub" data-i18n="verifiedTrader">Верифицированный трейдер</div>
           </div>
           <div class="hc-balance">
@@ -232,18 +238,32 @@
           </div>
           <label class="set-row set-row-control" for="language-select">
             <span id="set-language-label" data-i18n="language">Язык</span>
-            <select id="language-select" class="language-select" aria-label="Выбор языка" data-i18n-aria-label="selectAria">
-              <option value="ru" data-i18n="languageRussian">Русский</option>
-              <option value="en" data-i18n="languageEnglish">English</option>
-            </select>
+            <div class="custom-select-wrap" id="lang-dropdown-wrap">
+              <button class="custom-select-btn" id="lang-dropdown-btn" type="button">
+                <span class="cs-flag" id="lang-flag">🇷🇺</span>
+                <span class="cs-label" id="lang-label">Русский</span>
+                <span class="cs-caret">▾</span>
+              </button>
+              <div class="custom-select-menu" id="lang-dropdown-menu">
+                <button class="cs-option active" data-val="ru" type="button"><span class="cs-flag">🇷🇺</span>Русский</button>
+                <button class="cs-option" data-val="en" type="button"><span class="cs-flag">🇺🇸</span>English</button>
+              </div>
+            </div>
           </label>
           <label class="set-row set-row-control" for="currency-select">
             <span id="set-currency-label" data-i18n="accountCurrency">Валюта аккаунта</span>
-            <select id="currency-select" class="language-select" aria-label="Выбор валюты" data-i18n-aria-label="currencyAria">
-              <option value="RUB" data-i18n="currencyRub">Российский рубль</option>
-              <option value="USD" data-i18n="currencyUsd">Доллар США</option>
-              <option value="BYN" data-i18n="currencyByn">Белорусский рубль</option>
-            </select>
+            <div class="custom-select-wrap" id="cur-dropdown-wrap">
+              <button class="custom-select-btn" id="cur-dropdown-btn" type="button">
+                <span class="cs-flag" id="cur-flag">🇷🇺</span>
+                <span class="cs-label" id="cur-label">RUB</span>
+                <span class="cs-caret">▾</span>
+              </button>
+              <div class="custom-select-menu" id="cur-dropdown-menu">
+                <button class="cs-option active" data-val="RUB" type="button"><span class="cs-flag">🇷🇺</span><span data-i18n="currencyRub">Российский рубль</span></button>
+                <button class="cs-option" data-val="USD" type="button"><span class="cs-flag">🇺🇸</span><span data-i18n="currencyUsd">Доллар США</span></button>
+                <button class="cs-option" data-val="BYN" type="button"><span class="cs-flag">🇧🇾</span><span data-i18n="currencyByn">Белорусский рубль</span></button>
+              </div>
+            </div>
           </label>
         </div>
       <div id="admin-section" class="admin-section hidden">
@@ -375,6 +395,35 @@
     <button id="withdraw-confirm-btn" class="withdraw-confirm" type="button" data-i18n="withdrawRequestButton">
       Отправить запрос
     </button>
+  </div>
+
+  <!-- Trade Result Overlay -->
+  <div id="trade-result-overlay" class="trade-result-overlay hidden" aria-hidden="true">
+    <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
+    <div class="tr-card" id="tr-card">
+      <div class="tr-icon" id="tr-icon">✓</div>
+      <div class="tr-title" id="tr-title">Успех!</div>
+      <div class="tr-pair" id="tr-pair">BTC/USDT</div>
+      <div class="tr-pnl" id="tr-pnl">+₽950.00</div>
+      <div class="tr-details" id="tr-details"></div>
+      <div class="tr-actions">
+        <button class="tr-share-btn" id="tr-share-btn" type="button">📤 <span data-i18n="shareResult">Поделиться</span></button>
+        <button class="tr-close-btn" id="tr-close-btn" type="button" data-i18n="close">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share Card Modal -->
+  <div id="share-card-modal" class="share-card-modal hidden" aria-hidden="true">
+    <div class="sc-modal-bg" onclick="closeShareModal()"></div>
+    <div class="sc-modal-body">
+      <div class="bm-handle"></div>
+      <canvas id="share-canvas" width="640" height="400"></canvas>
+      <div class="sc-modal-actions">
+        <button class="sc-send-btn" id="sc-send-btn" type="button">📩 <span data-i18n="sendToChat">Отправить в чат</span></button>
+        <button class="sc-close-btn" id="sc-close-btn" type="button" onclick="closeShareModal()" data-i18n="close">Закрыть</button>
+      </div>
+    </div>
   </div>
 
   </div>
