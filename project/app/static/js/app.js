@@ -711,11 +711,15 @@ async function init() {
   }
 
   await loadAdminAccess();
-  await Promise.all([loadChart(), loadBets()]);
-  startPricePoll();
+  await loadBets();
 
+  // Show main app first — chart-loader stays visible inside it
   el('loading-screen').classList.add('hidden');
   el('main-app').classList.remove('hidden');
+
+  // Now load chart — user sees the logo loader in chart area during fetch
+  await loadChart();
+  startPricePoll();
 }
 
 document.querySelectorAll('.nav-tab').forEach(button => {
