@@ -12,7 +12,7 @@ const CURRENCY_OPTIONS = {
   USD: { symbol: '$', rubRate: 90, flag: '🇺🇸' },
   BYN: { symbol: 'Br', rubRate: 30, flag: '🇧🇾' },
 };
-const LANGUAGE_FLAGS = { ru: '🇷🇺', en: '🇺🇸' };
+const LANGUAGE_FLAGS = { ru: '🇷🇺', en: '🇬🇧' };
 const DEFAULT_CURRENCY = 'RUB';
 const MARKET_STORAGE_KEY = 'cryptotrade:selectedSymbol';
 const LANGUAGE_STORAGE_KEY = 'cryptotrade:language';
