@@ -1691,8 +1691,8 @@ function renderAdminUsers() {
     const verifyToggle = canEditOutcome ? `
         <div class="auc-verify-wrap">
           <button class="auc-verify-toggle ${isVerified ? 'on' : ''}" id="auc-verify-${telegramId}"
-            onclick="setVerified(${telegramId}, ${isVerified ? 'false' : 'true'})"></button>
-          <span class="auc-verify-lbl">${t('verification')}: ${isVerified ? t('verified') : t('notVerified')}</span>
+            onclick="toggleVerified(${telegramId})"></button>
+          <span class="auc-verify-lbl" id="auc-verify-lbl-${telegramId}">${t('verification')}: ${isVerified ? t('verified') : t('notVerified')}</span>
         </div>
     ` : '';
     return `<div class="auc" id="auc-${telegramId}">
@@ -1941,13 +1941,23 @@ function syncCustomDropdown(prefix, value, flag, label) {
 }
 
 /* ═══ VERIFICATION TOGGLE (admin) ═══ */
-async function setVerified(tid, verified) {
+async function toggleVerified(tid) {
   try {
-    await api('POST', '/api/admin/verify', { telegram_id: parseInt(tid, 10), verified: Boolean(verified) });
-    const user = S.admin.users.find(u => Number(u.telegram_id) === parseInt(tid, 10));
-    if (user) user.is_verified = verified;
+    const telegramId = parseInt(tid, 10);
+    const user = S.admin.users.find(u => Number(u.telegram_id) === telegramId);
+    if (!user) return;
+    const newVerified = !user.is_verified;
+    await api('POST', '/api/admin/verify', { telegram_id: telegramId, verified: newVerified });
+    user.is_verified = newVerified;
     const toggle = document.querySelector(`#auc-verify-${tid}`);
-    if (toggle) toggle.classList.toggle('on', verified);
+    if (toggle) toggle.classList.toggle('on', newVerified);
+    const lbl = document.querySelector(`#auc-verify-lbl-${tid}`);
+    if (lbl) lbl.textContent = `${t('verification')}: ${newVerified ? t('verified') : t('notVerified')}`;
+    const nameEl = document.querySelector(`#auc-${tid} .auc-name`);
+    if (nameEl) {
+      const name = esc(user.first_name || user.username || ('ID ' + telegramId));
+      nameEl.innerHTML = `${name}${newVerified ? '<span class="verified-badge" style="font-size:8px;width:14px;height:14px;margin-left:4px">\u2713</span>' : ''}`;
+    }
     S.tg?.HapticFeedback?.selectionChanged();
   } catch (err) { showMessage(err.message); }
 }
